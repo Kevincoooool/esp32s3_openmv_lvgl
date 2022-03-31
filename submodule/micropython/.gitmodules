@@ -1,0 +1,18 @@
+[submodule "lib/berkeley-db-1.xx"]
+	path = lib/berkeley-db-1.xx
+	url = https://github.com/pfalcon/berkeley-db-1.xx
+[submodule "lib/mbedtls"]
+	path = lib/mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
+[submodule "lib/tinyusb"]
+	path = lib/tinyusb
+	url = https://github.com/hathach/tinyusb
+[submodule "lib/pico-sdk"]
+	path = lib/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "lib/mynewt-nimble"]
+	path = lib/mynewt-nimble
+	url = https://github.com/apache/mynewt-nimble.git
+[submodule "lib/lwip"]
+	path = lib/lwip
+	url = https://github.com/lwip-tcpip/lwip.git

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "timeutils.h": "c",
+        "runtime.h": "c",
+        "omv_sensor.h": "c",
+        "esp_camera.h": "c"
+    }
+}

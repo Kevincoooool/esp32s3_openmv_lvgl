@@ -1,0 +1,11 @@
+# Build directory
+######################
+build-GENERIC/
+build-GENERIC_D2WD/
+build-GENERIC_OTA/
+build-GENERIC_S2/
+build-GENERIC_S3/
+build-GENERIC_SPIRAM/
+build-UM_FEATHERS2/
+build-UM_TINYPICO/
+build-UM_TINYS2/
