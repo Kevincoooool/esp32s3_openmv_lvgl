@@ -1,9 +1,9 @@
 """
 categories: Core
-description: f-strings cannot support expressions that require parsing to resolve unbalanced nested braces and brackets
+description: f-strings cannot support expressions that require parsing to resolve nested braces
 cause: MicroPython is optimised for code space.
-workaround: Always use balanced braces and brackets in expressions inside f-strings
+workaround: Only use simple expressions inside f-strings
 """
 
-print(f'{"hello { world"}')
-print(f'{"hello ] world"}')
+f'{"hello {} world"}'
+f"{repr({})}"

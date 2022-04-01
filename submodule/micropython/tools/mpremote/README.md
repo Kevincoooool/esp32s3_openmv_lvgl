@@ -27,7 +27,6 @@ The full list of supported commands are:
                                             --capture <file>
                                             --inject-code <string>
                                             --inject-file <file>
-    mpremote help                    -- print list of commands and exit
 
 Multiple commands can be specified and they will be run sequentially.  Connection
 and disconnection will be done automatically at the start and end of the execution
@@ -51,10 +50,7 @@ Any user configuration, including user-defined shortcuts, can be placed in
     commands = {
         "c33": "connect id:334D335C3138",
         "bl": "bootloader",
-        "double x=4": {
-            "command": "eval x*2",
-            "help": "multiply by two"
-        }
+        "double x=4": "eval x*2",
     }
 
 Examples:

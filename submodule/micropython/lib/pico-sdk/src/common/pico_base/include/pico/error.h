@@ -7,8 +7,6 @@
 #ifndef _PICO_ERROR_H
 #define _PICO_ERROR_H
 
-#ifndef __ASSEMBLER__
-
 /*!
  * Common return codes from pico_sdk methods that return a status
  */
@@ -19,7 +17,5 @@ enum {
     PICO_ERROR_GENERIC = -2,
     PICO_ERROR_NO_DATA = -3,
 };
-
-#endif // !__ASSEMBLER__
 
 #endif

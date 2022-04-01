@@ -43,7 +43,8 @@ static const uint32_t magic_token[] = {
 
 static uint32_t __uninitialized_ram(magic_location)[count_of(magic_token)];
 
-/* Check for double reset and enter BOOTSEL mode if detected
+/*! \brief Check for double reset and enter BOOTSEL mode if detected
+ *  \ingroup pico_bootsel_via_double_reset
  *
  * This function is registered to run automatically before main(). The
  * algorithm is:

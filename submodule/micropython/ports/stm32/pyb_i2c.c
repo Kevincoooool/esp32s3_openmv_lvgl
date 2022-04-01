@@ -167,10 +167,10 @@ const pyb_i2c_obj_t pyb_i2c_obj[] = {
 
 // I2C TIMINGs obtained from the STHAL examples.
 #define MICROPY_HW_I2C_BAUDRATE_TIMING { \
-        {PYB_I2C_SPEED_STANDARD, 0xE0701F28}, \
-        {PYB_I2C_SPEED_FULL, 0x40900C22}, \
-        {PYB_I2C_SPEED_FAST, 0x4030040B}, \
-    }
+        {PYB_I2C_SPEED_STANDARD, 0x40604E73}, \
+        {PYB_I2C_SPEED_FULL, 0x00901954}, \
+        {PYB_I2C_SPEED_FAST, 0x10810915}, \
+}
 #define MICROPY_HW_I2C_BAUDRATE_DEFAULT (PYB_I2C_SPEED_FULL)
 #define MICROPY_HW_I2C_BAUDRATE_MAX (PYB_I2C_SPEED_FAST)
 
@@ -339,18 +339,6 @@ void pyb_i2c_init(I2C_HandleTypeDef *i2c) {
 }
 
 void i2c_deinit(I2C_HandleTypeDef *i2c) {
-    // Find and disabled the correct dma channels for the i2c bus.
-    for (int i = 0; i < (sizeof(pyb_i2c_obj) / sizeof(pyb_i2c_obj_t)); i++) {
-        if (pyb_i2c_obj[i].i2c == i2c) {
-            if (pyb_i2c_obj[i].rx_dma_descr != NULL) {
-                dma_deinit(pyb_i2c_obj[i].rx_dma_descr);
-            }
-            if (pyb_i2c_obj[i].tx_dma_descr != NULL) {
-                dma_deinit(pyb_i2c_obj[i].tx_dma_descr);
-            }
-            break;
-        }
-    }
     HAL_I2C_DeInit(i2c);
     if (0) {
     #if defined(MICROPY_HW_I2C1_SCL)
@@ -360,7 +348,6 @@ void i2c_deinit(I2C_HandleTypeDef *i2c) {
         __HAL_RCC_I2C1_CLK_DISABLE();
         HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
         HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
-        
     #endif
     #if defined(MICROPY_HW_I2C2_SCL)
     } else if (i2c->Instance == I2C2) {
@@ -389,15 +376,6 @@ void i2c_deinit(I2C_HandleTypeDef *i2c) {
     }
 }
 
-void i2c_deinit_all(void) {
-    for (int i = 0; i < (sizeof(pyb_i2c_obj) / sizeof(pyb_i2c_obj_t)); i++) {
-        const pyb_i2c_obj_t *pyb_i2c = &pyb_i2c_obj[i];
-        if (pyb_i2c->i2c != NULL) {
-            i2c_deinit(pyb_i2c->i2c);
-        }
-    }
-}
-
 void pyb_i2c_init_freq(const pyb_i2c_obj_t *self, mp_int_t freq) {
     I2C_InitTypeDef *init = &self->i2c->Init;
 
@@ -420,7 +398,7 @@ void pyb_i2c_init_freq(const pyb_i2c_obj_t *self, mp_int_t freq) {
 
 STATIC void i2c_reset_after_error(I2C_HandleTypeDef *i2c) {
     // wait for bus-busy flag to be cleared, with a timeout
-    for (int timeout = 5; timeout > 0; --timeout) {
+    for (int timeout = 50; timeout > 0; --timeout) {
         if (!__HAL_I2C_GET_FLAG(i2c, I2C_FLAG_BUSY)) {
             // stop bit was generated and bus is back to normal
             return;
@@ -460,8 +438,28 @@ void i2c_ev_irq_handler(mp_uint_t i2c_id) {
             return;
     }
 
-    // Use the HAL's IRQ handler
+    #if defined(STM32F4)
+
+    if (hi2c->Instance->SR1 & I2C_FLAG_BTF && hi2c->State == HAL_I2C_STATE_BUSY_TX) {
+        if (hi2c->XferCount != 0U) {
+            hi2c->Instance->DR = *hi2c->pBuffPtr++;
+            hi2c->XferCount--;
+        } else {
+            __HAL_I2C_DISABLE_IT(hi2c, I2C_IT_EVT | I2C_IT_BUF | I2C_IT_ERR);
+            if (hi2c->XferOptions != I2C_FIRST_FRAME) {
+                hi2c->Instance->CR1 |= I2C_CR1_STOP;
+            }
+            hi2c->Mode = HAL_I2C_MODE_NONE;
+            hi2c->State = HAL_I2C_STATE_READY;
+        }
+    }
+
+    #else
+
+    // if not an F4 MCU, use the HAL's IRQ handler
     HAL_I2C_EV_IRQHandler(hi2c);
+
+    #endif
 }
 
 void i2c_er_irq_handler(mp_uint_t i2c_id) {
@@ -492,8 +490,41 @@ void i2c_er_irq_handler(mp_uint_t i2c_id) {
             return;
     }
 
-    // Use the HAL's IRQ handler
+    #if defined(STM32F4)
+
+    uint32_t sr1 = hi2c->Instance->SR1;
+
+    // I2C Bus error
+    if (sr1 & I2C_FLAG_BERR) {
+        hi2c->ErrorCode |= HAL_I2C_ERROR_BERR;
+        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_BERR);
+    }
+
+    // I2C Arbitration Loss error
+    if (sr1 & I2C_FLAG_ARLO) {
+        hi2c->ErrorCode |= HAL_I2C_ERROR_ARLO;
+        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_ARLO);
+    }
+
+    // I2C Acknowledge failure
+    if (sr1 & I2C_FLAG_AF) {
+        hi2c->ErrorCode |= HAL_I2C_ERROR_AF;
+        SET_BIT(hi2c->Instance->CR1,I2C_CR1_STOP);
+        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_AF);
+    }
+
+    // I2C Over-Run/Under-Run
+    if (sr1 & I2C_FLAG_OVR) {
+        hi2c->ErrorCode |= HAL_I2C_ERROR_OVR;
+        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_OVR);
+    }
+
+    #else
+
+    // if not an F4 MCU, use the HAL's IRQ handler
     HAL_I2C_ER_IRQHandler(hi2c);
+
+    #endif
 }
 
 STATIC HAL_StatusTypeDef i2c_wait_dma_finished(I2C_HandleTypeDef *i2c, uint32_t timeout) {
@@ -736,7 +767,7 @@ STATIC mp_obj_t pyb_i2c_send(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
     pyb_buf_get_for_send(args[0].u_obj, &bufinfo, data);
 
     // if option is set and IRQs are enabled then we can use DMA
-    bool use_dma = (*self->use_dma && query_irq() == IRQ_STATE_ENABLED && DMA_BUFFER(bufinfo.buf));
+    bool use_dma = *self->use_dma && query_irq() == IRQ_STATE_ENABLED;
 
     DMA_HandleTypeDef tx_dma;
     if (use_dma) {
@@ -912,7 +943,7 @@ STATIC mp_obj_t pyb_i2c_mem_read(size_t n_args, const mp_obj_t *pos_args, mp_map
     }
 
     // if option is set and IRQs are enabled then we can use DMA
-    bool use_dma = (*self->use_dma && query_irq() == IRQ_STATE_ENABLED && DMA_BUFFER(vstr.buf));
+    bool use_dma = *self->use_dma && query_irq() == IRQ_STATE_ENABLED;
 
     HAL_StatusTypeDef status;
     if (!use_dma) {

@@ -76,13 +76,9 @@
     #include "class/msc/msc_device.h"
   #endif
 
-  #if CFG_TUD_AUDIO
-    #include "class/audio/audio_device.h"
-  #endif
-
-  #if CFG_TUD_VIDEO
-    #include "class/video/video_device.h"
-  #endif
+#if CFG_TUD_AUDIO
+  #include "class/audio/audio_device.h"
+#endif
 
   #if CFG_TUD_MIDI
     #include "class/midi/midi_device.h"
@@ -100,11 +96,11 @@
     #include "class/dfu/dfu_rt_device.h"
   #endif
 
-  #if CFG_TUD_DFU
+  #if CFG_TUD_DFU_MODE
     #include "class/dfu/dfu_device.h"
   #endif
 
-  #if CFG_TUD_ECM_RNDIS || CFG_TUD_NCM
+  #if CFG_TUD_NET
     #include "class/net/net_device.h"
   #endif
 

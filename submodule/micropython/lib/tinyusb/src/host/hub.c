@@ -29,7 +29,6 @@
 #if (TUSB_OPT_HOST_ENABLED && CFG_TUH_HUB)
 
 #include "usbh.h"
-#include "usbh_classdriver.h"
 #include "hub.h"
 
 //--------------------------------------------------------------------+
@@ -45,14 +44,8 @@ typedef struct
   hub_port_status_response_t port_status;
 } hub_interface_t;
 
-CFG_TUSB_MEM_SECTION static hub_interface_t hub_data[CFG_TUH_HUB];
-CFG_TUSB_MEM_SECTION TU_ATTR_ALIGNED(4) static uint8_t _hub_buffer[sizeof(descriptor_hub_desc_t)];
-
-TU_ATTR_ALWAYS_INLINE
-static inline hub_interface_t* get_itf(uint8_t dev_addr)
-{
-  return &hub_data[dev_addr-1-CFG_TUH_DEVICE_MAX];
-}
+CFG_TUSB_MEM_SECTION static hub_interface_t hub_data[CFG_TUSB_HOST_DEVICE_MAX];
+TU_ATTR_ALIGNED(4) CFG_TUSB_MEM_SECTION static uint8_t _hub_buffer[sizeof(descriptor_hub_desc_t)];
 
 #if CFG_TUSB_DEBUG
 static char const* const _hub_feature_str[] =
@@ -150,49 +143,40 @@ bool hub_port_get_status(uint8_t hub_addr, uint8_t hub_port, void* resp, tuh_con
 //--------------------------------------------------------------------+
 void hub_init(void)
 {
-  tu_memclr(hub_data, sizeof(hub_data));
+  tu_memclr(hub_data, CFG_TUSB_HOST_DEVICE_MAX*sizeof( hub_interface_t));
 }
 
-bool hub_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *itf_desc, uint16_t max_len)
+bool hub_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *itf_desc, uint16_t *p_length)
 {
-  TU_VERIFY(TUSB_CLASS_HUB == itf_desc->bInterfaceClass &&
-            0              == itf_desc->bInterfaceSubClass);
+  // not support multiple TT yet
+  if ( itf_desc->bInterfaceProtocol > 1 ) return false;
 
-  // hub driver does not support multiple TT yet
-  TU_VERIFY(itf_desc->bInterfaceProtocol <= 1);
+  //------------- Open Interrupt Status Pipe -------------//
+  tusb_desc_endpoint_t const *ep_desc;
+  ep_desc = (tusb_desc_endpoint_t const *) tu_desc_next(itf_desc);
 
-  // msc driver length is fixed
-  uint16_t const drv_len = sizeof(tusb_desc_interface_t) + sizeof(tusb_desc_endpoint_t);
-  TU_ASSERT(drv_len <= max_len);
-
-  //------------- Interrupt Status endpoint -------------//
-  tusb_desc_endpoint_t const *desc_ep = (tusb_desc_endpoint_t const *) tu_desc_next(itf_desc);
-
-  TU_ASSERT(TUSB_DESC_ENDPOINT  == desc_ep->bDescriptorType &&
-            TUSB_XFER_INTERRUPT == desc_ep->bmAttributes.xfer, 0);
+  TU_ASSERT(TUSB_DESC_ENDPOINT == ep_desc->bDescriptorType);
+  TU_ASSERT(TUSB_XFER_INTERRUPT == ep_desc->bmAttributes.xfer);
   
-  TU_ASSERT(usbh_edpt_open(rhport, dev_addr, desc_ep));
+  TU_ASSERT(usbh_edpt_open(rhport, dev_addr, ep_desc));
 
-  hub_interface_t* p_hub = get_itf(dev_addr);
+  hub_data[dev_addr-1].itf_num = itf_desc->bInterfaceNumber;
+  hub_data[dev_addr-1].ep_in   = ep_desc->bEndpointAddress;
 
-  p_hub->itf_num = itf_desc->bInterfaceNumber;
-  p_hub->ep_in   = desc_ep->bEndpointAddress;
+  (*p_length) = sizeof(tusb_desc_interface_t) + sizeof(tusb_desc_endpoint_t);
 
   return true;
 }
 
 void hub_close(uint8_t dev_addr)
 {
-  TU_VERIFY(dev_addr > CFG_TUH_DEVICE_MAX, );
-  hub_interface_t* p_hub = get_itf(dev_addr);
-
-  if (p_hub->ep_in) tu_memclr(p_hub, sizeof( hub_interface_t));
+  tu_memclr(&hub_data[dev_addr-1], sizeof( hub_interface_t));
 }
 
 bool hub_status_pipe_queue(uint8_t dev_addr)
 {
-  hub_interface_t* hub_itf = get_itf(dev_addr);
-  return usbh_edpt_xfer(dev_addr, hub_itf->ep_in, &hub_itf->status_change, 1);
+  hub_interface_t * p_hub = &hub_data[dev_addr-1];
+  return usbh_edpt_xfer(dev_addr, p_hub->ep_in, &p_hub->status_change, 1);
 }
 
 
@@ -205,7 +189,7 @@ static bool config_port_power_complete (uint8_t dev_addr, tusb_control_request_t
 
 bool hub_set_config(uint8_t dev_addr, uint8_t itf_num)
 {
-  hub_interface_t* p_hub = get_itf(dev_addr);
+   hub_interface_t* p_hub = &hub_data[dev_addr-1];
   TU_ASSERT(itf_num == p_hub->itf_num);
 
   // Get Hub Descriptor
@@ -233,7 +217,7 @@ static bool config_set_port_power (uint8_t dev_addr, tusb_control_request_t cons
   (void) request;
   TU_ASSERT(XFER_RESULT_SUCCESS == result);
 
-  hub_interface_t* p_hub = get_itf(dev_addr);
+  hub_interface_t* p_hub = &hub_data[dev_addr-1];
 
   // only use number of ports in hub descriptor
   descriptor_hub_desc_t const* desc_hub = (descriptor_hub_desc_t const*) _hub_buffer;
@@ -249,7 +233,7 @@ static bool config_set_port_power (uint8_t dev_addr, tusb_control_request_t cons
 static bool config_port_power_complete (uint8_t dev_addr, tusb_control_request_t const * request, xfer_result_t result)
 {
   TU_ASSERT(XFER_RESULT_SUCCESS == result);
-   hub_interface_t* p_hub = get_itf(dev_addr);
+   hub_interface_t* p_hub = &hub_data[dev_addr-1];
 
   if (request->wIndex == p_hub->port_count)
   {
@@ -283,7 +267,7 @@ bool hub_xfer_cb(uint8_t dev_addr, uint8_t ep_addr, xfer_result_t result, uint32
   (void) ep_addr;
   TU_ASSERT(result == XFER_RESULT_SUCCESS);
 
-  hub_interface_t* p_hub = get_itf(dev_addr);
+  hub_interface_t * p_hub = &hub_data[dev_addr-1];
 
   TU_LOG2("  Port Status Change = 0x%02X\r\n", p_hub->status_change);
 
@@ -305,8 +289,7 @@ bool hub_xfer_cb(uint8_t dev_addr, uint8_t ep_addr, xfer_result_t result, uint32
 static bool connection_get_status_complete (uint8_t dev_addr, tusb_control_request_t const * request, xfer_result_t result)
 {
   TU_ASSERT(result == XFER_RESULT_SUCCESS);
-
-  hub_interface_t* p_hub = get_itf(dev_addr);
+  hub_interface_t * p_hub = &hub_data[dev_addr-1];
   uint8_t const port_num = (uint8_t) request->wIndex;
 
   // Connection change
@@ -334,7 +317,7 @@ static bool connection_clear_conn_change_complete (uint8_t dev_addr, tusb_contro
 {
   TU_ASSERT(result == XFER_RESULT_SUCCESS);
 
-  hub_interface_t* p_hub = get_itf(dev_addr);
+  hub_interface_t * p_hub = &hub_data[dev_addr-1];
   uint8_t const port_num = (uint8_t) request->wIndex;
 
   if ( p_hub->port_status.status.connection )
@@ -365,7 +348,7 @@ static bool connection_port_reset_complete (uint8_t dev_addr, tusb_control_reque
 {
   TU_ASSERT(result == XFER_RESULT_SUCCESS);
 
-  // hub_interface_t* p_hub = get_itf(dev_addr);
+  // usbh_hub_t * p_hub = &hub_data[dev_addr-1];
   uint8_t const port_num = (uint8_t) request->wIndex;
 
   // submit attach event

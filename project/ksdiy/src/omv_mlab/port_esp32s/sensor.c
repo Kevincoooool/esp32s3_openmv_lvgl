@@ -788,13 +788,13 @@ int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
     case OMV_PIXFORMAT_RGB565:
     {
         MAIN_FB()->bpp = 2;
-        // for (int i = 0; i < pic->len; i += 2)
-        // {
-        //     uint8_t temp = 0;
-        //     temp = buffer->data[i];
-        //     buffer->data[i] = buffer->data[i + 1];
-        //     buffer->data[i + 1] = temp;
-        // }
+        for (int i = 0; i < pic->len; i += 2)
+        {
+            uint8_t temp = 0;
+            temp = buffer->data[i];
+            buffer->data[i] = buffer->data[i + 1];
+            buffer->data[i + 1] = temp;
+        }
         /*
             for(int i = 0; i < pic->len; i+=2){
                 uint8_t temp = 0;

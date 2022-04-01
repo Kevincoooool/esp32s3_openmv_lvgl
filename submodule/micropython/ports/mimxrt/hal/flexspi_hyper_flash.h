@@ -28,7 +28,7 @@
 
 #include "fsl_flexspi.h"
 #include "mpconfigboard.h"
-#include "flexspi_flash_config.h"
+#include BOARD_FLASH_CONFIG_HEADER_H
 
 // Defined in boards flash_config.c
 extern flexspi_nor_config_t qspiflash_config;
@@ -58,5 +58,13 @@ static inline uint32_t flexspi_get_frequency(void) {
 
     return fre;
 }
+
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_READDATA    0
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEDATA   1
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_READSTATUS  2
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_WRITEENABLE 4
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_ERASESECTOR 6
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_PAGEPROGRAM 10
+#define HYPERFLASH_CMD_LUT_SEQ_IDX_ERASECHIP   12
 
 #endif // MICROPY_INCLUDED_MIMXRT_HAL_FLEXSPI_HYPER_FLASH_H

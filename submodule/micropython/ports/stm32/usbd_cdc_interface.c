@@ -37,7 +37,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "boardctrl.h"
 #include "usbd_cdc_msc_hid.h"
 #include "usbd_cdc_interface.h"
 #include "pendsv.h"
@@ -59,13 +58,6 @@
 #define CDC_SET_CONTROL_LINE_STATE                  0x22
 #define CDC_SEND_BREAK                              0x23
 
-#define IDE_BAUDRATE_SLOW    (921600)
-#define IDE_BAUDRATE_FAST    (12000000)
-
-extern void usbdbg_data_in(void *buffer, int length);
-extern void usbdbg_data_out(void *buffer, int length);
-extern void usbdbg_control(void *buffer, uint8_t brequest, uint32_t wlength);
-
 // Used to control the connect_state variable when USB host opens the serial port
 static uint8_t usbd_cdc_connect_tx_timer;
 
@@ -81,9 +73,6 @@ uint8_t *usbd_cdc_init(usbd_cdc_state_t *cdc_in) {
     cdc->rx_buf_get = 0;
     cdc->rx_buf_full = false;
     cdc->tx_need_empty_packet = 0;
-    cdc->baudrate = 0;
-    cdc->dbg_mode_enabled = 0;
-    cdc->dbg_xfer_length  = 0;
     cdc->connect_state = USBD_CDC_CONNECT_STATE_DISCONNECTED;
     if (cdc->attached_to_repl) {
         // Default behavior is non-blocking when attached to repl
@@ -130,34 +119,23 @@ int8_t usbd_cdc_control(usbd_cdc_state_t *cdc_in, uint8_t cmd, uint8_t *pbuf, ui
             /* Add your code here */
             break;
 
-        case CDC_SET_LINE_CODING: {
-            cdc->baudrate = *((uint32_t*)pbuf);
-            if (0) {
-            #if MICROPY_HW_USB_CDC_1200BPS_TOUCH
-            } else if (cdc->baudrate == 1200) {
-                MICROPY_RESET_TO_BOOTLOADER();
+        case CDC_SET_LINE_CODING:
+            #if 0
+            LineCoding.bitrate = (uint32_t)(pbuf[0] | (pbuf[1] << 8) | \
+                (pbuf[2] << 16) | (pbuf[3] << 24));
+            LineCoding.format = pbuf[4];
+            LineCoding.paritytype = pbuf[5];
+            LineCoding.datatype = pbuf[6];
+            /* Set the new configuration */
             #endif
-            // The slow cdc->baudrate can be used on OSs that don't support custom baudrates
-            } else if (cdc->baudrate == IDE_BAUDRATE_SLOW || cdc->baudrate == IDE_BAUDRATE_FAST) {
-                cdc->dbg_xfer_length  = 0;
-                cdc->dbg_last_packet  = 0;
-                cdc->dbg_mode_enabled = 1;
-            } else {
-                cdc->dbg_mode_enabled = 0;
-            }
-            cdc->tx_buf_ptr_in = 0;
-            cdc->tx_buf_ptr_out = 0;
-            cdc->tx_buf_ptr_out_next = 0;
-            cdc->tx_need_empty_packet = 0;
             break;
-        }
 
         case CDC_GET_LINE_CODING:
             /* Add your code here */
-            pbuf[0] = (uint8_t)(cdc->baudrate);
-            pbuf[1] = (uint8_t)(cdc->baudrate >> 8);
-            pbuf[2] = (uint8_t)(cdc->baudrate >> 16);
-            pbuf[3] = (uint8_t)(cdc->baudrate >> 24);
+            pbuf[0] = (uint8_t)(115200);
+            pbuf[1] = (uint8_t)(115200 >> 8);
+            pbuf[2] = (uint8_t)(115200 >> 16);
+            pbuf[3] = (uint8_t)(115200 >> 24);
             pbuf[4] = 0; // stop bits (1)
             pbuf[5] = 0; // parity (none)
             pbuf[6] = 8; // number of bits (8)
@@ -192,8 +170,6 @@ int8_t usbd_cdc_control(usbd_cdc_state_t *cdc_in, uint8_t cmd, uint8_t *pbuf, ui
 
     return USBD_OK;
 }
-
-static void send_packet(usbd_cdc_itf_t *cdc);
 
 static inline uint16_t usbd_cdc_tx_buffer_mask(uint16_t val) {
     return val & (MICROPY_HW_USB_CDC_TX_DATA_SIZE - 1);
@@ -237,20 +213,8 @@ static uint8_t *usbd_cdc_tx_buffer_getp(usbd_cdc_itf_t *cdc, uint16_t len) {
 // Called when the USB IN endpoint is ready to receive more data
 // (cdc.base.tx_in_progress must be 0)
 void usbd_cdc_tx_ready(usbd_cdc_state_t *cdc_in) {
-    usbd_cdc_itf_t *cdc = (usbd_cdc_itf_t*)cdc_in;
 
-    if (cdc->dbg_mode_enabled == 1) {
-        if (cdc->dbg_xfer_length) {
-            send_packet(cdc);
-        } else {
-            if (cdc->dbg_last_packet == CDC_DATA_MAX_PACKET_SIZE) {
-                cdc->dbg_last_packet = 0;
-                USBD_CDC_TransmitPacket(&cdc->base, 0, cdc->dbg_xfer_buffer);
-            }
-        }
-        return;
-    } 
-
+    usbd_cdc_itf_t *cdc = (usbd_cdc_itf_t *)cdc_in;
     cdc->tx_buf_ptr_out = cdc->tx_buf_ptr_out_next;
 
     if (usbd_cdc_tx_buffer_empty(cdc) && !cdc->tx_need_empty_packet) {
@@ -273,10 +237,6 @@ void usbd_cdc_tx_ready(usbd_cdc_state_t *cdc_in) {
 
 // Attempt to queue data on the USB IN endpoint
 static void usbd_cdc_try_tx(usbd_cdc_itf_t *cdc) {
-    if (cdc->dbg_mode_enabled == 1) {
-        return;
-    }
-
     uint32_t basepri = raise_irq_pri(IRQ_PRI_OTG_FS);
     if (cdc == NULL || cdc->connect_state == USBD_CDC_CONNECT_STATE_DISCONNECTED) {
         // CDC device is not connected to a host, so we are unable to send any data
@@ -327,65 +287,28 @@ void usbd_cdc_rx_check_resume(usbd_cdc_itf_t *cdc) {
     enable_irq(irq_state);
 }
 
-uint32_t usbd_cdc_buf_len(usbd_cdc_itf_t *cdc) {
-    cdc->tx_buf_ptr_out = cdc->tx_buf_ptr_out_next;
-    if (usbd_cdc_tx_buffer_empty(cdc)) {
-        return 0;
-    }
-    return usbd_cdc_tx_send_length(cdc);
-}
-
-uint32_t usbd_cdc_get_buf(usbd_cdc_itf_t *cdc, uint8_t *buf, uint32_t len)
-{
-    cdc->tx_buf_ptr_out = cdc->tx_buf_ptr_out_next;
-    memcpy(buf, usbd_cdc_tx_buffer_getp(cdc, len), len);
-    return len;
-}
-
-static void send_packet(usbd_cdc_itf_t *cdc) {
-    int bytes = MIN(cdc->dbg_xfer_length, CDC_DATA_MAX_PACKET_SIZE);
-    cdc->dbg_last_packet = bytes;
-    usbdbg_data_in(cdc->dbg_xfer_buffer, bytes);
-    cdc->dbg_xfer_length -= bytes;
-    USBD_CDC_TransmitPacket(&cdc->base, bytes, cdc->dbg_xfer_buffer);
-}
-
 // Data received over USB OUT endpoint is processed here.
 // len: number of bytes received into the buffer we passed to USBD_CDC_ReceivePacket
 // Returns USBD_OK if all operations are OK else USBD_FAIL
 int8_t usbd_cdc_receive(usbd_cdc_state_t *cdc_in, size_t len) {
     usbd_cdc_itf_t *cdc = (usbd_cdc_itf_t *)cdc_in;
 
-    if (cdc->dbg_mode_enabled == 1) {
-        if (cdc->dbg_xfer_length) {
-            usbdbg_data_out(cdc->rx_packet_buf, len);
-            cdc->dbg_xfer_length -= len;
-        } else if (cdc->rx_packet_buf[0] == '\x30') { // command
-            uint8_t request = cdc->rx_packet_buf[1];
-            cdc->dbg_xfer_length = *((uint32_t*)(cdc->rx_packet_buf+2));
-            usbdbg_control(cdc->rx_packet_buf+6, request, cdc->dbg_xfer_length);
-            if (cdc->dbg_xfer_length && (request & 0x80)) { //request has a device-to-host data phase
-                send_packet(cdc); //prime tx buffer
+    // copy the incoming data into the circular buffer
+    for (const uint8_t *src = cdc->rx_packet_buf, *top = cdc->rx_packet_buf + len; src < top; ++src) {
+        if (cdc->attached_to_repl && *src == mp_interrupt_char) {
+            pendsv_kbd_intr();
+        } else {
+            uint16_t next_put = (cdc->rx_buf_put + 1) & (MICROPY_HW_USB_CDC_RX_DATA_SIZE - 1);
+            if (next_put == cdc->rx_buf_get) {
+                // overflow, we just discard the rest of the chars
+                break;
             }
-        }
-    } else {
-        // copy the incoming data into the circular buffer
-        for (const uint8_t *src = cdc->rx_packet_buf, *top = cdc->rx_packet_buf + len; src < top; ++src) {
-            if (cdc->attached_to_repl && *src == mp_interrupt_char) {
-                pendsv_kbd_intr();
-            } else {
-                uint16_t next_put = (cdc->rx_buf_put + 1) & (MICROPY_HW_USB_CDC_RX_DATA_SIZE - 1);
-                if (next_put == cdc->rx_buf_get) {
-                    // overflow, we just discard the rest of the chars
-                    break;
-                }
-                cdc->rx_user_buf[cdc->rx_buf_put] = *src;
-                cdc->rx_buf_put = next_put;
-            }
+            cdc->rx_user_buf[cdc->rx_buf_put] = *src;
+            cdc->rx_buf_put = next_put;
         }
     }
 
-    MICROPY_BOARD_USBD_CDC_RX_EVENT(cdc);
+    usbd_cdc_rx_event_callback(cdc);
 
     if ((cdc->flow & USBD_CDC_FLOWCONTROL_RTS) && (usbd_cdc_rx_buffer_full(cdc))) {
         cdc->rx_buf_full = true;
@@ -480,10 +403,6 @@ void usbd_cdc_tx_always(usbd_cdc_itf_t *cdc, const uint8_t *buf, uint32_t len) {
 
 // Returns number of bytes in the rx buffer.
 int usbd_cdc_rx_num(usbd_cdc_itf_t *cdc) {
-    if (cdc->dbg_mode_enabled == 1) {
-        return 0;
-    }
-
     int32_t rx_waiting = (int32_t)cdc->rx_buf_put - (int32_t)cdc->rx_buf_get;
     if (rx_waiting < 0) {
         rx_waiting += MICROPY_HW_USB_CDC_RX_DATA_SIZE;
@@ -495,10 +414,6 @@ int usbd_cdc_rx_num(usbd_cdc_itf_t *cdc) {
 // timout in milliseconds.
 // Returns number of bytes read from the device.
 int usbd_cdc_rx(usbd_cdc_itf_t *cdc, uint8_t *buf, uint32_t len, uint32_t timeout) {
-    if (cdc->dbg_mode_enabled == 1) {
-        return 0;
-    }
-
     // loop to read bytes
     for (uint32_t i = 0; i < len; i++) {
         // Wait until we have at least 1 byte to read

@@ -39,47 +39,41 @@ extern "C" {
 struct hci_le_conn_complete;
 struct hci_conn_update;
 
-#define BLE_GAP_ADV_ITVL_MS(t)              ((t) * 1000 / BLE_HCI_ADV_ITVL)
-#define BLE_GAP_SCAN_ITVL_MS(t)             ((t) * 1000 / BLE_HCI_SCAN_ITVL)
-#define BLE_GAP_SCAN_WIN_MS(t)              ((t) * 1000 / BLE_HCI_SCAN_ITVL)
-#define BLE_GAP_CONN_ITVL_MS(t)             ((t) * 1000 / BLE_HCI_CONN_ITVL)
-#define BLE_GAP_SUPERVISION_TIMEOUT_MS(t)   ((t) / 10)
-
 /** 30 ms. */
-#define BLE_GAP_ADV_FAST_INTERVAL1_MIN      BLE_GAP_ADV_ITVL_MS(30)
+#define BLE_GAP_ADV_FAST_INTERVAL1_MIN      (30 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 60 ms. */
-#define BLE_GAP_ADV_FAST_INTERVAL1_MAX      BLE_GAP_ADV_ITVL_MS(60)
+#define BLE_GAP_ADV_FAST_INTERVAL1_MAX      (60 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 100 ms. */
-#define BLE_GAP_ADV_FAST_INTERVAL2_MIN      BLE_GAP_ADV_ITVL_MS(100)
+#define BLE_GAP_ADV_FAST_INTERVAL2_MIN      (100 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 150 ms. */
-#define BLE_GAP_ADV_FAST_INTERVAL2_MAX      BLE_GAP_ADV_ITVL_MS(150)
+#define BLE_GAP_ADV_FAST_INTERVAL2_MAX      (150 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 30 ms; active scanning. */
-#define BLE_GAP_SCAN_FAST_INTERVAL_MIN      BLE_GAP_SCAN_ITVL_MS(30)
+#define BLE_GAP_SCAN_FAST_INTERVAL_MIN      (30 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 60 ms; active scanning. */
-#define BLE_GAP_SCAN_FAST_INTERVAL_MAX      BLE_GAP_SCAN_ITVL_MS(60)
+#define BLE_GAP_SCAN_FAST_INTERVAL_MAX      (60 * 1000 / BLE_HCI_ADV_ITVL)
 
 /** 11.25 ms; limited discovery interval. */
-#define BLE_GAP_LIM_DISC_SCAN_INT           BLE_GAP_SCAN_ITVL_MS(11.25)
+#define BLE_GAP_LIM_DISC_SCAN_INT           (11.25 * 1000 / BLE_HCI_SCAN_ITVL)
 
 /** 11.25 ms; limited discovery window (not from the spec). */
-#define BLE_GAP_LIM_DISC_SCAN_WINDOW        BLE_GAP_SCAN_WIN_MS(11.25)
+#define BLE_GAP_LIM_DISC_SCAN_WINDOW        (11.25 * 1000 / BLE_HCI_SCAN_ITVL)
 
 /** 30 ms; active scanning. */
-#define BLE_GAP_SCAN_FAST_WINDOW            BLE_GAP_SCAN_WIN_MS(30)
+#define BLE_GAP_SCAN_FAST_WINDOW            (30 * 1000 / BLE_HCI_SCAN_ITVL)
 
 /* 30.72 seconds; active scanning. */
-#define BLE_GAP_SCAN_FAST_PERIOD            BLE_GAP_SCAN_ITVL_MS(30.72)
+#define BLE_GAP_SCAN_FAST_PERIOD            (30.72 * 1000)
 
 /** 1.28 seconds; background scanning. */
-#define BLE_GAP_SCAN_SLOW_INTERVAL1         BLE_GAP_SCAN_ITVL_MS(1280)
+#define BLE_GAP_SCAN_SLOW_INTERVAL1         (1280 * 1000 / BLE_HCI_SCAN_ITVL)
 
 /** 11.25 ms; background scanning. */
-#define BLE_GAP_SCAN_SLOW_WINDOW1           BLE_GAP_SCAN_WIN_MS(11.25)
+#define BLE_GAP_SCAN_SLOW_WINDOW1           (11.25 * 1000 / BLE_HCI_SCAN_ITVL)
 
 /** 10.24 seconds. */
 #define BLE_GAP_DISC_DUR_DFLT               (10.24 * 1000)
@@ -94,18 +88,18 @@ struct hci_conn_update;
 #define BLE_GAP_CONN_PAUSE_PERIPHERAL       (5 * 1000)
 
 /* 30 ms. */
-#define BLE_GAP_INITIAL_CONN_ITVL_MIN       BLE_GAP_CONN_ITVL_MS(30)
+#define BLE_GAP_INITIAL_CONN_ITVL_MIN       (30 * 1000 / BLE_HCI_CONN_ITVL)
 
 /* 50 ms. */
-#define BLE_GAP_INITIAL_CONN_ITVL_MAX       BLE_GAP_CONN_ITVL_MS(50)
+#define BLE_GAP_INITIAL_CONN_ITVL_MAX       (50 * 1000 / BLE_HCI_CONN_ITVL)
 
 /** Default channels mask: all three channels are used. */
 #define BLE_GAP_ADV_DFLT_CHANNEL_MAP        0x07
 
 #define BLE_GAP_INITIAL_CONN_LATENCY        0
 #define BLE_GAP_INITIAL_SUPERVISION_TIMEOUT 0x0100
-#define BLE_GAP_INITIAL_CONN_MIN_CE_LEN     0x0000
-#define BLE_GAP_INITIAL_CONN_MAX_CE_LEN     0x0000
+#define BLE_GAP_INITIAL_CONN_MIN_CE_LEN     0x0010
+#define BLE_GAP_INITIAL_CONN_MAX_CE_LEN     0x0300
 
 #define BLE_GAP_ROLE_MASTER                 0
 #define BLE_GAP_ROLE_SLAVE                  1
@@ -1802,22 +1796,6 @@ int ble_gap_update_params(uint16_t conn_handle,
                           const struct ble_gap_upd_params *params);
 
 /**
- * Configure LE Data Length in controller (OGF = 0x08, OCF = 0x0022).
- *
- * @param conn_handle      Connection handle.
- * @param tx_octets        The preferred value of payload octets that the Controller
- *                         should use for a new connection (Range
- *                         0x001B-0x00FB).
- * @param tx_time          The preferred maximum number of microseconds that the local Controller
- *                         should use to transmit a single link layer packet
- *                         (Range 0x0148-0x4290).
- *
- * @return                 0 on success,
- *                         other error code on failure.
- */
-int ble_gap_set_data_len(uint16_t conn_handle, uint16_t tx_octets, uint16_t tx_time);
-
-/**
  * Initiates the GAP security procedure.
  *
  * Depending on connection role and stored security information this function
@@ -1917,20 +1895,6 @@ int ble_gap_unpair(const ble_addr_t *peer_addr);
  *                                  error.
  */
 int ble_gap_unpair_oldest_peer(void);
-
-/**
- * Similar to `ble_gap_unpair_oldest_peer()`, except it makes sure that the
- * peer received in input parameters is not deleted.
- *
- * @param peer_addr             Address of the peer (not to be deleted)
- *
- * @return                      0 on success;
- *                              A BLE host HCI return code if the controller
- *                                  rejected the request;
- *                              A BLE host core return code on unexpected
- *                                  error.
- */
-int ble_gap_unpair_oldest_except(const ble_addr_t *peer_addr);
 
 #define BLE_GAP_PRIVATE_MODE_NETWORK        0
 #define BLE_GAP_PRIVATE_MODE_DEVICE         1

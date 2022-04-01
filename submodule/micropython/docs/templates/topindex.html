@@ -6,7 +6,15 @@
 
   <p>
     {{ _('Welcome! This is the documentation for MicroPython') }}
-    v{{ release|e }}, for the OpenMV Cam and compatible platforms{% if last_updated %}, {{ _('last updated') }} {{ last_updated|e }}{% endif %}.
+    v{{ release|e }}{% if last_updated %}, {{ _('last updated') }} {{ last_updated|e }}{% endif %}.
+  </p>
+
+  <p>
+    MicroPython runs on a variety of systems and hardware platforms.  Here you can read
+    the general documentation which applies to all systems, as well as specific information
+    about the various platforms -
+    also known as <a href="{{ pathto("reference/glossary") }}#term-micropython-port">ports</a>
+    - that MicroPython runs on.
   </p>
 
   <p><strong>General documentation for MicroPython:</strong></p>
@@ -34,13 +42,29 @@
     </td>
   </tr></table>
 
-  <p><strong>References and tutorials:</strong></p>
+  <p><strong>References and tutorials for specific platforms:</strong></p>
 
   <table class="contentstable"><tr>
     <td width="40%" style="padding-left:2em;">
       <p class="biglink">
-        <a class="biglink" href="{{ pathto("openmvcam/quickref") }}">Quick reference for the OpenMV Cam</a><br/>
-        <span class="linkdescr">pinout for the OpenMV Cam, snippets of useful code, and a tutorial</span>
+        <a class="biglink" href="{{ pathto("pyboard/quickref") }}">Quick reference for the pyboard</a><br/>
+        <span class="linkdescr">pinout for the pyboard, snippets of useful code, and a tutorial</span>
+      </p>
+      <p class="biglink">
+        <a class="biglink" href="{{ pathto("esp8266/quickref") }}">Quick reference for the ESP8266</a><br/>
+        <span class="linkdescr">pinout for ESP8266-based boards, snippets of useful code, and a tutorial</span>
+      </p>
+      <p class="biglink">
+        <a class="biglink" href="{{ pathto("esp32/quickref") }}">Quick reference for the ESP32</a><br/>
+        <span class="linkdescr">pinout for ESP32-based boards, snippets of useful code, and a tutorial</span>
+      </p>
+      <p class="biglink">
+        <a class="biglink" href="{{ pathto("rp2/quickref") }}">Quick reference for the Raspberry Pi RP2xxx</a><br/>
+        <span class="linkdescr">pinout for rp2xxx-based boards, snippets of useful code, and a tutorial</span>
+      </p>
+      <p class="biglink">
+        <a class="biglink" href="{{ pathto("wipy/quickref") }}">Quick reference for the WiPy/CC3200</a><br/>
+        <span class="linkdescr">pinout for the WiPy/CC3200, snippets of useful code, and a tutorial</span>
       </p>
       <p class="biglink">
         <a class="biglink" href="{{ pathto("unix/quickref") }}">Quick reference for UNIX and Windows</a><br/>
@@ -80,24 +104,6 @@
 
   <p><strong>External links:</strong></p>
 
-  <table class="contentstable"><tr>
-    <td width="40%" style="padding-left:2em;">
-      <p class="biglink">
-      <a class="biglink" href="https://openmv.io">OpenMV homepage</a><br/>
-        <span class="linkdescr">the official OpenMV site</span>
-      </p>
-      <p class="biglink">
-        <a class="biglink" href="http://forums.openmv.io">OpenMV forum</a><br/>
-        <span class="linkdescr">community discussion for all things related to OpenMV</span>
-      </p>
-    </td>
-    <td width="40%" style="padding-left:2em;">
-      <p class="biglink">
-        <a class="biglink" href="https://github.com/openmv">OpenMV on GitHub</a><br/>
-        <span class="linkdescr">contribute to the source code on GitHub</span>
-      </p>
-    </td>
-  </tr></table>
   <table class="contentstable"><tr>
     <td width="40%" style="padding-left:2em;">
       <p class="biglink">

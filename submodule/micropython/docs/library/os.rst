@@ -114,7 +114,7 @@ Terminal redirection and duplication
 
 .. function:: dupterm(stream_object, index=0, /)
 
-   Duplicate or switch the MicroPython terminal (the REPL) on the given :std:term:`stream`-like
+   Duplicate or switch the MicroPython terminal (the REPL) on the given `stream`-like
    object. The *stream_object* argument must be a native stream object, or derive
    from ``io.IOBase`` and implement the ``readinto()`` and
    ``write()`` methods.  The stream should be in non-blocking mode and

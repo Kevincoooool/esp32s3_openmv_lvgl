@@ -25,7 +25,6 @@
  */
 
 #include "tusb.h"
-#include "mpconfigboard.h"
 
 #ifndef MICROPY_HW_USB_VID
 #define MICROPY_HW_USB_VID (0xf055)
@@ -96,8 +95,6 @@ const uint8_t *tud_descriptor_configuration_cb(uint8_t index) {
 const uint16_t *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
     #define DESC_STR_MAX (20)
     static uint16_t desc_str[DESC_STR_MAX];
-
-    (void)langid;
 
     uint8_t len;
     if (index == 0) {

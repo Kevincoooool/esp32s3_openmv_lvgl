@@ -26,7 +26,6 @@
 #include "ble_hs_priv.h"
 #include "ble_l2cap_coc_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 _Static_assert(sizeof (struct ble_l2cap_hdr) == BLE_L2CAP_HDR_SZ,
                "struct ble_l2cap_hdr must be 4 bytes");
 
@@ -505,5 +504,3 @@ ble_l2cap_init(void)
 
     return 0;
 }
-
-#endif

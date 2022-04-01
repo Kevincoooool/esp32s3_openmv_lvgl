@@ -44,8 +44,6 @@
 #define CMD_RD_DEVID    (0x9f)
 #define CMD_CHIP_ERASE  (0xc7)
 #define CMD_C4READ      (0xeb)
-#define CMD_RSTEN       (0x66)
-#define CMD_RESET       (0x99)
 
 // 32 bit addressing commands
 #define CMD_WRITE_32    (0x12)
@@ -195,10 +193,6 @@ void mp_spiflash_init(mp_spiflash_t *self) {
             mp_spiflash_wait_wip0(self);
         }
     }
-
-    mp_spiflash_write_cmd(self, CMD_RSTEN);
-    mp_spiflash_write_cmd(self, CMD_RESET);
-    mp_spiflash_wait_wip0(self);
 
     mp_spiflash_release_bus(self);
 }

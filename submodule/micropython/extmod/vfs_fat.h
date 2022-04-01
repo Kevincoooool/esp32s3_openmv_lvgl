@@ -29,13 +29,13 @@
 #include "py/obj.h"
 #include "lib/oofatfs/ff.h"
 #include "extmod/vfs.h"
-
+typedef void *bdev_t;
 typedef struct _fs_user_mount_t {
     mp_obj_base_t base;
     mp_vfs_blockdev_t blockdev;
     FATFS fatfs;
 } fs_user_mount_t;
-
+extern bdev_t msc_pdrv;
 extern const byte fresult_to_errno_table[20];
 extern const mp_obj_type_t mp_fat_vfs_type;
 extern const mp_obj_type_t mp_type_vfs_fat_fileio;

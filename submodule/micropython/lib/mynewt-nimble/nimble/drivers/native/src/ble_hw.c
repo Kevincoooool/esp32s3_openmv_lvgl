@@ -20,8 +20,6 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include "syscfg/syscfg.h"
 #include "os/os.h"
 #include "nimble/ble.h"
@@ -33,9 +31,6 @@
 
 /* We use this to keep track of which entries are set to valid addresses */
 static uint8_t g_ble_hw_whitelist_mask;
-
-static ble_rng_isr_cb_t rng_cb;
-static bool rng_started;
 
 /* Returns public device address or -1 if not present */
 int
@@ -148,8 +143,7 @@ ble_hw_encrypt_block(struct ble_encryption_block *ecb)
 int
 ble_hw_rng_init(ble_rng_isr_cb_t cb, int bias)
 {
-    rng_cb = cb;
-    return 0;
+    return -1;
 }
 
 /**
@@ -160,15 +154,7 @@ ble_hw_rng_init(ble_rng_isr_cb_t cb, int bias)
 int
 ble_hw_rng_start(void)
 {
-    rng_started = true;
-
-    if (rng_cb) {
-        while (rng_started) {
-            rng_cb(rand());
-        }
-    }
-
-    return 0;
+    return -1;
 }
 
 /**
@@ -179,8 +165,7 @@ ble_hw_rng_start(void)
 int
 ble_hw_rng_stop(void)
 {
-    rng_started = false;
-    return 0;
+    return -1;
 }
 
 /**
@@ -191,7 +176,7 @@ ble_hw_rng_stop(void)
 uint8_t
 ble_hw_rng_read(void)
 {
-    return rand();
+    return 0;
 }
 
 #if MYNEWT_VAL(BLE_LL_CFG_FEAT_LL_PRIVACY)

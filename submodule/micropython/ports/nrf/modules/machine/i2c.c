@@ -119,8 +119,6 @@ mp_obj_t machine_hard_i2c_make_new(const mp_obj_type_t *type, size_t n_args, siz
 
     config.hold_bus_uninit = false;
 
-    config.interrupt_priority = 7;
-
     // Set context to this object.
     nrfx_twi_init(&self->p_twi, &config, NULL, (void *)self);
 

@@ -60,7 +60,6 @@
 #include "host/ble_gap.h"
 #include "ble_hs_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 /*****************************************************************************
  * $definitions / declarations                                               *
  *****************************************************************************/
@@ -698,16 +697,12 @@ ble_gattc_proc_free(struct ble_gattc_proc *proc)
 
         switch (proc->op) {
         case BLE_GATT_OP_WRITE_LONG:
-            if (MYNEWT_VAL(BLE_GATT_WRITE_LONG)) {
-                os_mbuf_free_chain(proc->write_long.attr.om);
-            }
+            os_mbuf_free_chain(proc->write_long.attr.om);
             break;
 
         case BLE_GATT_OP_WRITE_RELIABLE:
-            if (MYNEWT_VAL(BLE_GATT_WRITE_RELIABLE)) {
-                for (i = 0; i < proc->write_reliable.num_attrs; i++) {
-                    os_mbuf_free_chain(proc->write_reliable.attrs[i].om);
-                }
+            for (i = 0; i < proc->write_reliable.num_attrs; i++) {
+                os_mbuf_free_chain(proc->write_reliable.attrs[i].om);
             }
             break;
 
@@ -4809,5 +4804,3 @@ ble_gattc_init(void)
 
     return 0;
 }
-
-#endif

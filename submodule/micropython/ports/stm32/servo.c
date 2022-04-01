@@ -40,10 +40,11 @@
 // The driver uses hardware PWM to drive servos on pins X1, X2, X3, X4 which are
 // assumed to be on PA0, PA1, PA2, PA3 but not necessarily in that order (the
 // pins PA0-PA3 are used directly if the X pins are not defined).
+//
+// TIM2 and TIM5 have CH1-CH4 on PA0-PA3 respectively.  They are both 32-bit
+// counters with 16-bit prescaler.  TIM5 is used by this driver.
 
-#ifndef PYB_SERVO_NUM
-#define PYB_SERVO_NUM (2)
-#endif
+#define PYB_SERVO_NUM (4)
 
 typedef struct _pyb_servo_obj_t {
     mp_obj_base_t base;
@@ -75,14 +76,18 @@ void servo_init(void) {
         pyb_servo_obj[i].time_left = 0;
     }
 
-    pyb_servo_obj[0].pin = pin_D12;
-    pyb_servo_obj[1].pin = pin_D13;
-#if PYB_SERVO_NUM >= 3
-    pyb_servo_obj[2].pin = pin_D14;
-#endif
-#if PYB_SERVO_NUM >= 4
-    pyb_servo_obj[3].pin = pin_D15;
-#endif
+    // assign servo objects to specific pins (must be some permutation of PA0-PA3)
+    #ifdef pyb_pin_X1
+    pyb_servo_obj[0].pin = pyb_pin_X1;
+    pyb_servo_obj[1].pin = pyb_pin_X2;
+    pyb_servo_obj[2].pin = pyb_pin_X3;
+    pyb_servo_obj[3].pin = pyb_pin_X4;
+    #else
+    pyb_servo_obj[0].pin = pin_A0;
+    pyb_servo_obj[1].pin = pin_A1;
+    pyb_servo_obj[2].pin = pin_A2;
+    pyb_servo_obj[3].pin = pin_A3;
+    #endif
 }
 
 void servo_timer_irq_callback(void) {
@@ -108,26 +113,26 @@ void servo_timer_irq_callback(void) {
                 need_it = true;
             }
             // set the pulse width
-            *(&TIM4->CCR1 + (s->pin->pin - 12)) = s->pulse_cur;
+            *(&TIM5->CCR1 + s->pin->pin) = s->pulse_cur;
         }
     }
     if (need_it) {
-        __HAL_TIM_ENABLE_IT(&TIM4_Handle, TIM_IT_UPDATE);
+        __HAL_TIM_ENABLE_IT(&TIM5_Handle, TIM_IT_UPDATE);
     } else {
-        __HAL_TIM_DISABLE_IT(&TIM4_Handle, TIM_IT_UPDATE);
+        __HAL_TIM_DISABLE_IT(&TIM5_Handle, TIM_IT_UPDATE);
     }
 }
 
 STATIC void servo_init_channel(pyb_servo_obj_t *s) {
     static const uint8_t channel_table[4] =
     {TIM_CHANNEL_1, TIM_CHANNEL_2, TIM_CHANNEL_3, TIM_CHANNEL_4};
-    uint32_t channel = channel_table[s->pin->pin - 12];
+    uint32_t channel = channel_table[s->pin->pin];
 
     // GPIO configuration
-    mp_hal_pin_config(s->pin, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, GPIO_AF2_TIM4);
+    mp_hal_pin_config(s->pin, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, GPIO_AF2_TIM5);
 
-    if (__HAL_RCC_TIM4_IS_CLK_DISABLED()) {
-        timer_tim4_init();
+    if (__HAL_RCC_TIM5_IS_CLK_DISABLED()) {
+        timer_tim5_init();
     }
 
     // PWM mode configuration
@@ -136,14 +141,10 @@ STATIC void servo_init_channel(pyb_servo_obj_t *s) {
     oc_init.Pulse = s->pulse_cur; // units of 10us
     oc_init.OCPolarity = TIM_OCPOLARITY_HIGH;
     oc_init.OCFastMode = TIM_OCFAST_DISABLE;
-    HAL_TIM_PWM_ConfigChannel(&TIM4_Handle, &oc_init, channel);
+    HAL_TIM_PWM_ConfigChannel(&TIM5_Handle, &oc_init, channel);
 
     // start PWM
-    #if defined(STM32H7)
-    // Reset channel state to ready before calling HAL_PWM/IC/OC_Start_IT()
-    HAL_TIM_PWM_Stop(&TIM4_Handle, channel);
-    #endif
-    HAL_TIM_PWM_Start(&TIM4_Handle, channel);
+    HAL_TIM_PWM_Start(&TIM5_Handle, channel);
 }
 
 /******************************************************************************/
@@ -160,16 +161,16 @@ STATIC mp_obj_t pyb_servo_set(mp_obj_t port, mp_obj_t value) {
     }
     switch (p) {
         case 1:
-            TIM4->CCR1 = v;
+            TIM5->CCR1 = v;
             break;
         case 2:
-            TIM4->CCR2 = v;
+            TIM5->CCR2 = v;
             break;
         case 3:
-            TIM4->CCR3 = v;
+            TIM5->CCR3 = v;
             break;
         case 4:
-            TIM4->CCR4 = v;
+            TIM5->CCR4 = v;
             break;
     }
     return mp_const_none;
@@ -180,8 +181,8 @@ MP_DEFINE_CONST_FUN_OBJ_2(pyb_servo_set_obj, pyb_servo_set);
 STATIC mp_obj_t pyb_pwm_set(mp_obj_t period, mp_obj_t pulse) {
     int pe = mp_obj_get_int(period);
     int pu = mp_obj_get_int(pulse);
-    TIM4->ARR = pe;
-    TIM4->CCR3 = pu;
+    TIM5->ARR = pe;
+    TIM5->CCR3 = pu;
     return mp_const_none;
 }
 

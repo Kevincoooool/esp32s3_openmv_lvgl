@@ -148,6 +148,26 @@ provide a way to control networking interfaces of various kinds.
 .. toctree::
    :maxdepth: 1
 
-   network.WINC.rst
    network.WLAN.rst
-   network.LAN.rst
+   network.WLANWiPy.rst
+   network.CC3K.rst
+   network.WIZNET5K.rst
+
+Network functions
+=================
+
+The following are functions available in the network module.
+
+.. function:: phy_mode([mode])
+
+    Get or set the PHY mode.
+
+    If the *mode* parameter is provided, sets the mode to its value. If
+    the function is called without parameters, returns the current mode.
+
+    The possible modes are defined as constants:
+        * ``MODE_11B`` -- IEEE 802.11b,
+        * ``MODE_11G`` -- IEEE 802.11g,
+        * ``MODE_11N`` -- IEEE 802.11n.
+
+    Availability: ESP8266.

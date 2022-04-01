@@ -6,8 +6,6 @@ class I2C -- a two-wire serial protocol
 
 I2C is a two-wire protocol for communicating between devices.  At the physical
 level it consists of 2 wires: SCL and SDA, the clock and data lines respectively.
-OpenMV Cam does not provide Pullups on the SDA or SCL lines and external pullups
-are required on both SDA and SCL lines for the I2C bus to be functional.
 
 I2C objects are created attached to a specific bus.  They can be initialised
 when created, or initialised later on.
@@ -16,11 +14,11 @@ Example::
 
     from pyb import I2C
 
-    i2c = I2C(2)                         # create on bus 2
-    i2c = I2C(2, I2C.MASTER)             # create and init as a master
-    i2c.init(I2C.MASTER, baudrate=20000) # init as a master
-    i2c.init(I2C.SLAVE, addr=0x42)       # init as a slave with given address
-    i2c.deinit()                         # turn off the peripheral
+    i2c = I2C(1)                             # create on bus 1
+    i2c = I2C(1, I2C.CONTROLLER)             # create and init as a controller
+    i2c.init(I2C.CONTROLLER, baudrate=20000) # init as a controller
+    i2c.init(I2C.PERIPHERAL, addr=0x42)      # init as a peripheral with given address
+    i2c.deinit()                             # turn off the I2C unit
 
 Printing the i2c object gives you information about its configuration.
 
@@ -60,20 +58,24 @@ Constructors
 
 .. class:: pyb.I2C(bus, ...)
 
-   Construct an I2C object on the given bus.  ``bus`` can be 2 or 4.
-   With no additional parameters, the I2C object is created but not
+   Construct an I2C object on the given bus.  ``bus`` can be 1 or 2, 'X' or
+   'Y'. With no additional parameters, the I2C object is created but not
    initialised (it has the settings from the last initialisation of
    the bus, if any).  If extra arguments are given, the bus is initialised.
    See ``init`` for parameters of initialisation.
 
-   The physical pins of the I2C busses on the OpenMV Cam are:
+   The physical pins of the I2C buses on Pyboards V1.0 and V1.1 are:
 
-     - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (P4, P5) = (PB10, PB11)``
+     - ``I2C(1)`` is on the X position: ``(SCL, SDA) = (X9, X10) = (PB6, PB7)``
+     - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (Y9, Y10) = (PB10, PB11)``
 
-   The physical pins of the I2C busses on the OpenMV Cam M7 are:
+   On the Pyboard Lite:
 
-     - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (P4, P5) = (PB10, PB11)``
-     - ``I2C(4)`` is on the Y position: ``(SCL, SDA) = (P7, P8) = (PD12, PD13)``
+     - ``I2C(1)`` is on the X position: ``(SCL, SDA) = (X9, X10) = (PB6, PB7)``
+     - ``I2C(3)`` is on the Y position: ``(SCL, SDA) = (Y9, Y10) = (PA8, PB8)``
+
+   Calling the constructor with 'X' or 'Y' enables portability between Pyboard
+   types.
 
 Methods
 -------

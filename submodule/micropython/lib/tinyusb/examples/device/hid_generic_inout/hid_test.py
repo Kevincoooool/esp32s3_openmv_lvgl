@@ -11,10 +11,7 @@ for dict in hid.enumerate(USB_VID):
     if dev:
         while True:
             # Get input from console and encode to UTF8 for array of chars.
-            # hid generic inout is single report therefore by HIDAPI requirement
-            # it must be preceeded with 0x00 as dummy reportID
-            str_out = b'\x00'
-            str_out += input("Send text to HID Device : ").encode('utf-8')
+            str_out = input("Send text to HID Device : ").encode('utf-8')
             dev.write(str_out)
             str_in = dev.read(64)
             print("Received from HID Device:", str_in, '\n')

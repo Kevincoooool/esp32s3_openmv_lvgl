@@ -41,12 +41,12 @@
 static bool is_randomization_of_TIDs_done;
 
 #if (defined(ONOFF) || defined(ONOFF_TT))
-static uint8_t tid_onoff;
+static u8_t tid_onoff;
 #elif defined(VND_MODEL_TEST)
-static uint8_t tid_vnd;
+static u8_t tid_vnd;
 #endif
 
-static uint8_t tid_level;
+static u8_t tid_level;
 
 void randomize_publishers_TID(void)
 {
@@ -61,7 +61,7 @@ void randomize_publishers_TID(void)
 	is_randomization_of_TIDs_done = true;
 }
 
-static uint32_t button_read(int button)
+static u32_t button_read(int button)
 {
 	return (uint32_t) hal_gpio_read(button);
 }

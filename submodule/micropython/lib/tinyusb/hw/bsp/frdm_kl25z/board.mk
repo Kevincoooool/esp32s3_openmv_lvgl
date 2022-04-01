@@ -6,15 +6,10 @@ CFLAGS += \
   -mabi=aapcs \
   -mcpu=cortex-m0plus \
   -DCPU_MKL25Z128VLK4 \
-  -DCFG_TUSB_MCU=OPT_MCU_MKL25ZXX \
-  -DCFG_EXAMPLE_VIDEO_READONLY
-
-LDFLAGS += \
-  -Wl,--defsym,__stack_size__=0x400 \
-  -Wl,--defsym,__heap_size__=0
+  -DCFG_TUSB_MCU=OPT_MCU_MKL25ZXX
 
 # mcu driver cause following warnings
-CFLAGS += -Wno-error=unused-parameter -Wno-error=format
+CFLAGS += -Wno-error=unused-parameter
 
 MCU_DIR = $(SDK_DIR)/devices/MKL25Z4
 

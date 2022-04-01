@@ -2,7 +2,6 @@
 #define MICROPY_INCLUDED_STM32_LWIP_LWIPOPTS_H
 
 #include <stdint.h>
-#include <stdio.h>
 
 // This protection is not needed, instead we execute all lwIP code at PendSV priority
 #define SYS_ARCH_DECL_PROTECT(lev) do { } while (0)
@@ -12,18 +11,9 @@
 #define NO_SYS                          1
 #define SYS_LIGHTWEIGHT_PROT            1
 #define MEM_ALIGNMENT                   4
+
 #define LWIP_CHKSUM_ALGORITHM           3
 #define LWIP_CHECKSUM_CTRL_PER_NETIF    1
-
-//#define U32_F "lu"
-//#define U16_F "u"
-//#define LWIP_DEBUG
-//#define NETIF_DEBUG                     LWIP_DBG_ON
-//#define PBUF_DEBUG                      LWIP_DBG_ON
-//#define MEM_DEBUG                       LWIP_DBG_ON
-//#define MEMP_DEBUG                      LWIP_DBG_ON
-//#define LWIP_PLATFORM_DIAG(message)     do { printf message; } while(0)
-//#define LWIP_PLATFORM_ASSERT(message)   do { printf("ASSERTION FAILED! "); printf(message); printf("\n");} while(0)
 
 #define LWIP_ARP                        1
 #define LWIP_ETHERNET                   1

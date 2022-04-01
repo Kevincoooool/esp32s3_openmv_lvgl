@@ -7,8 +7,6 @@
 #ifndef _PICO_TYPES_H
 #define _PICO_TYPES_H
 
-#ifndef __ASSEMBLER__
-
 #include "pico/assert.h"
 
 #include <stdint.h>
@@ -90,5 +88,4 @@ typedef struct {
 
 #define bool_to_bit(x) ((uint)!!(x))
 
-#endif
 #endif

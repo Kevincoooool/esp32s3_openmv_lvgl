@@ -102,7 +102,6 @@
 #define INVALID_FIELD_IN_PARAMETER_LIST             0x26
 #define ADDRESS_OUT_OF_RANGE                        0x21
 #define MEDIUM_NOT_PRESENT                          0x3A
-#define MEDIUM_NOT_READY                            0x04
 #define MEDIUM_HAVE_CHANGED                         0x28
 #define WRITE_PROTECTED                             0x27
 #define UNRECOVERED_READ_ERROR                      0x11
@@ -175,11 +174,6 @@ void   SCSI_SenseCode(USBD_HandleTypeDef  *pdev,
                       uint8_t sKey,
                       uint8_t ASC);
 
-void   SCSI_SenseCode2(USBD_HandleTypeDef  *pdev,
-                      uint8_t lun,
-                      uint8_t sKey,
-                      uint8_t ASC,
-                      uint8_t ASCQ);
 /**
   * @}
   */

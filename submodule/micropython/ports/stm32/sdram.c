@@ -49,86 +49,89 @@
 
 #ifdef FMC_SDRAM_BANK
 
-static SDRAM_HandleTypeDef hsdram;
-extern void __fatal_error(const char *msg);
 static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *command);
+extern void __fatal_error(const char *msg);
 
-bool sdram_init(void)
-{
+bool sdram_init(void) {
+    SDRAM_HandleTypeDef hsdram;
     FMC_SDRAM_TimingTypeDef SDRAM_Timing;
     FMC_SDRAM_CommandTypeDef command;
 
     __HAL_RCC_FMC_CLK_ENABLE();
 
     #if defined(MICROPY_HW_FMC_SDCKE0)
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCKE0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCKE0);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNE0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNE0);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCKE0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCKE0);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNE0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNE0);
 
     #elif defined(MICROPY_HW_FMC_SDCKE1)
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCKE1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCKE1);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNE1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNE1);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCKE1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCKE1);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNE1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNE1);
     #endif
 
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCLK, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCLK);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNCAS, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNCAS);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNRAS, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNRAS);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNWE, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNWE);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_BA0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_BA0);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_BA1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_BA1);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL0);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL1);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDCLK, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDCLK);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNCAS, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNCAS);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNRAS, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNRAS);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_SDNWE, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_SDNWE);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_BA0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_BA0);
+    #ifdef MICROPY_HW_FMC_BA1
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_BA1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_BA1);
+    #endif
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL0);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL1);
     #ifdef MICROPY_HW_FMC_NBL2
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL2);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL3);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL2);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_NBL3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_NBL3);
     #endif
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A0);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A1);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A2);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A3);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A4, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A4);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A5, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A5);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A6, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A6);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A7, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A7);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A8, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A8);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A9, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A9);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A10, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A10);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A11, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A11);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A0);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A1);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A2);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A3);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A4, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A4);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A5, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A5);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A6, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A6);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A7, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A7);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A8, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A8);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A9, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A9);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A10, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A10);
+    #ifdef MICROPY_HW_FMC_A11
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A11, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A11);
+    #endif
     #ifdef MICROPY_HW_FMC_A12
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A12, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A12);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_A12, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_A12);
     #endif
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D0);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D1);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D2);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D3);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D4, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D4);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D5, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D5);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D6, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D6);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D7, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D7);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D8, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D8);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D9, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D9);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D10, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D10);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D11, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D11);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D12, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D12);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D13, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D13);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D14, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D14);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D15, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D15);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D0, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D0);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D1, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D1);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D2, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D2);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D3, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D3);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D4, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D4);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D5, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D5);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D6, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D6);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D7, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D7);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D8, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D8);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D9, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D9);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D10, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D10);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D11, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D11);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D12, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D12);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D13, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D13);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D14, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D14);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D15, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D15);
     #ifdef MICROPY_HW_FMC_D16
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D16, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D16);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D17, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D17);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D18, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D18);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D19, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D19);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D20, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D20);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D21, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D21);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D22, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D22);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D23, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D23);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D24, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D24);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D25, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D25);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D26, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D26);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D27, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D27);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D28, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D28);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D29, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D29);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D30, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D30);
-    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D31, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_UP, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D31);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D16, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D16);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D17, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D17);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D18, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D18);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D19, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D19);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D20, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D20);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D21, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D21);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D22, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D22);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D23, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D23);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D24, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D24);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D25, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D25);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D26, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D26);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D27, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D27);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D28, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D28);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D29, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D29);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D30, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D30);
+    mp_hal_pin_config_alt_static_speed(MICROPY_HW_FMC_D31, MP_HAL_PIN_MODE_ALT, MP_HAL_PIN_PULL_NONE, MP_HAL_PIN_SPEED_VERY_HIGH, STATIC_AF_FMC_D31);
     #endif
 
     /* SDRAM device configuration */
@@ -169,22 +172,19 @@ bool sdram_init(void)
     }
 
     sdram_init_seq(&hsdram, &command);
-
     return true;
 }
 
-void *sdram_start(void)
-{
+void *sdram_start(void) {
     return (void *)SDRAM_START_ADDRESS;
 }
 
-void *sdram_end(void)
-{
+void *sdram_end(void) {
     return (void *)(SDRAM_START_ADDRESS + MICROPY_HW_SDRAM_SIZE);
 }
 
-static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *command)
-{
+static void sdram_init_seq(SDRAM_HandleTypeDef
+    *hsdram, FMC_SDRAM_CommandTypeDef *command) {
     /* Program the SDRAM external device */
     __IO uint32_t tmpmrd = 0;
 
@@ -195,10 +195,10 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
     command->ModeRegisterDefinition = 0;
 
     /* Send the command */
-    HAL_SDRAM_SendCommand(hsdram, command, 0xFFFF);
+    HAL_SDRAM_SendCommand(hsdram, command, 0x1000);
 
-    /* Step 4: Insert 100 us delay */
-    HAL_Delay(1);
+    /* Step 4: Insert 100 ms delay */
+    HAL_Delay(100);
 
     /* Step 5: Configure a PALL (precharge all) command */
     command->CommandMode = FMC_SDRAM_CMD_PALL;
@@ -207,7 +207,7 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
     command->ModeRegisterDefinition = 0;
 
     /* Send the command */
-    HAL_SDRAM_SendCommand(hsdram, command, 0xFFFF);
+    HAL_SDRAM_SendCommand(hsdram, command, 0x1000);
 
     /* Step 6 : Configure a Auto-Refresh command */
     command->CommandMode = FMC_SDRAM_CMD_AUTOREFRESH_MODE;
@@ -216,7 +216,7 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
     command->ModeRegisterDefinition = 0;
 
     /* Send the command */
-    HAL_SDRAM_SendCommand(hsdram, command, 0xFFFF);
+    HAL_SDRAM_SendCommand(hsdram, command, 0x1000);
 
     /* Step 7: Program the external memory mode register */
     tmpmrd = (uint32_t)FMC_INIT(SDRAM_MODEREG_BURST_LENGTH, MICROPY_HW_SDRAM_BURST_LENGTH) |
@@ -224,13 +224,14 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
         FMC_INIT(SDRAM_MODEREG_CAS_LATENCY, MICROPY_HW_SDRAM_CAS_LATENCY) |
         SDRAM_MODEREG_OPERATING_MODE_STANDARD |
         SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
+
     command->CommandMode = FMC_SDRAM_CMD_LOAD_MODE;
     command->CommandTarget = FMC_SDRAM_CMD_TARGET_BANK;
     command->AutoRefreshNumber = 1;
     command->ModeRegisterDefinition = tmpmrd;
 
     /* Send the command */
-    HAL_SDRAM_SendCommand(hsdram, command, 0xFFFF);
+    HAL_SDRAM_SendCommand(hsdram, command, 0x1000);
 
     /* Step 8: Set the refresh rate counter
        RefreshRate = 64 ms / 8192 cyc = 7.8125 us/cyc
@@ -240,10 +241,10 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
        we also need to subtract 20 from the value, so the target
        refresh rate is 703 - 20 = 683.
      */
-    #define REFRESH_COUNT (MICROPY_HW_SDRAM_REFRESH_RATE * MICROPY_HW_SDRAM_FREQUENCY / MICROPY_HW_SDRAM_REFRESH_CYCLES - 20)
+    #define REFRESH_COUNT (MICROPY_HW_SDRAM_REFRESH_RATE * 90000 / 8192 - 20)
     HAL_SDRAM_ProgramRefreshRate(hsdram, REFRESH_COUNT);
 
-    #if defined(STM32F7) || defined(STM32H7)
+    #if defined(STM32F7)
     /* Enable MPU for the SDRAM Memory Region to allow non-aligned
        accesses (hard-fault otherwise)
        Initially disable all access for the entire SDRAM memory space,
@@ -256,34 +257,23 @@ static void sdram_init_seq(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef
     #endif
 }
 
-void sdram_enter_low_power()
-{
-    FMC_SDRAM_CommandTypeDef command;
-    command.CommandMode = FMC_SDRAM_CMD_SELFREFRESH_MODE;
-    command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK;
-    command.AutoRefreshNumber = 1;
-    command.ModeRegisterDefinition = 0;
-    HAL_SDRAM_SendCommand(&hsdram, &command, 0xFFFF);
+void sdram_enter_low_power(void) {
+    // Enter self-refresh mode.
+    // In self-refresh mode the SDRAM retains data with external clocking.
+    FMC_SDRAM_DEVICE->SDCMR |= (FMC_SDRAM_CMD_SELFREFRESH_MODE |     // Command Mode
+        FMC_SDRAM_CMD_TARGET_BANK |                                  // Command Target
+        (0 << 5U) |                                                  // Auto Refresh Number -1
+        (0 << 9U));                                                  // Mode Register Definition
 }
 
-void sdram_leave_low_power()
-{
-    FMC_SDRAM_CommandTypeDef command;
-    command.CommandMode = FMC_SDRAM_CMD_NORMAL_MODE;
-    command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK;
-    command.AutoRefreshNumber = 1;
-    command.ModeRegisterDefinition = 0;
-    HAL_SDRAM_SendCommand(&hsdram, &command, 0xFFFF);
-}
-
-void sdram_powerdown()
-{
-    FMC_SDRAM_CommandTypeDef command;
-    command.CommandMode = FMC_SDRAM_CMD_POWERDOWN_MODE;
-    command.CommandTarget = FMC_SDRAM_CMD_TARGET_BANK;
-    command.AutoRefreshNumber = 1;
-    command.ModeRegisterDefinition = 0;
-    HAL_SDRAM_SendCommand(&hsdram, &command, 0xFFFF);
+void sdram_leave_low_power(void) {
+    // Exit self-refresh mode.
+    // Self-refresh mode is exited when the device is accessed or the mode bits are
+    // set to Normal mode, so technically it's not necessary to call this functions.
+    FMC_SDRAM_DEVICE->SDCMR |= (FMC_SDRAM_CMD_NORMAL_MODE |          // Command Mode
+        FMC_SDRAM_CMD_TARGET_BANK |                                  // Command Target
+        (0 << 5U) |                                                  // Auto Refresh Number - 1
+        (0 << 9U));                                                  // Mode Register Definition
 }
 
 #if __GNUC__ >= 11
@@ -293,10 +283,10 @@ void sdram_powerdown()
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
 #endif
 
-bool __attribute__((optimize("Os"))) sdram_test(bool exhaustive) {
+bool __attribute__((optimize("O0"))) sdram_test(bool exhaustive) {
     uint8_t const pattern = 0xaa;
     uint8_t const antipattern = 0x55;
-    volatile uint8_t *const mem_base = (uint8_t *)sdram_start();
+    uint8_t *const mem_base = (uint8_t *)sdram_start();
 
     #if MICROPY_HW_SDRAM_TEST_FAIL_ON_ERROR
     char error_buffer[1024];
@@ -320,13 +310,12 @@ bool __attribute__((optimize("Os"))) sdram_test(bool exhaustive) {
 
     // Test data bus
     for (uint32_t i = 0; i < MICROPY_HW_SDRAM_MEM_BUS_WIDTH; i++) {
-        *((volatile uint32_t *)mem_base) = (1 << i);
-        __DSB();
-        if (*((volatile uint32_t *)mem_base) != (1 << i)) {
+        *((uint32_t *)mem_base) = (1 << i);
+        if (*((uint32_t *)mem_base) != (1 << i)) {
             #if MICROPY_HW_SDRAM_TEST_FAIL_ON_ERROR
             snprintf(error_buffer, sizeof(error_buffer),
                 "Data bus test failed at 0x%p expected 0x%x found 0x%lx",
-                &mem_base[0], (1 << i), ((volatile uint32_t *)mem_base)[0]);
+                &mem_base[0], (1 << i), ((uint32_t *)mem_base)[0]);
             __fatal_error(error_buffer);
             #endif
             return false;
@@ -336,7 +325,6 @@ bool __attribute__((optimize("Os"))) sdram_test(bool exhaustive) {
     // Test address bus
     for (uint32_t i = 1; i < MICROPY_HW_SDRAM_SIZE; i <<= 1) {
         mem_base[i] = pattern;
-        __DSB();
         if (mem_base[i] != pattern) {
             #if MICROPY_HW_SDRAM_TEST_FAIL_ON_ERROR
             snprintf(error_buffer, sizeof(error_buffer),
@@ -350,7 +338,6 @@ bool __attribute__((optimize("Os"))) sdram_test(bool exhaustive) {
 
     // Check for aliasing (overlaping addresses)
     mem_base[0] = antipattern;
-    __DSB();
     for (uint32_t i = 1; i < MICROPY_HW_SDRAM_SIZE; i <<= 1) {
         if (mem_base[i] != pattern) {
             #if MICROPY_HW_SDRAM_TEST_FAIL_ON_ERROR
@@ -369,15 +356,15 @@ bool __attribute__((optimize("Os"))) sdram_test(bool exhaustive) {
         // is enabled, it's not just writing and reading from cache.
         // Note: This test should also detect refresh rate issues.
         for (uint32_t i = 0; i < MICROPY_HW_SDRAM_SIZE; i++) {
-            mem_base[i] = ((i % 2) ? pattern : antipattern);
+            mem_base[i] = pattern;
         }
 
         for (uint32_t i = 0; i < MICROPY_HW_SDRAM_SIZE; i++) {
-            if (mem_base[i] != ((i % 2) ? pattern : antipattern)) {
+            if (mem_base[i] != pattern) {
                 #if MICROPY_HW_SDRAM_TEST_FAIL_ON_ERROR
                 snprintf(error_buffer, sizeof(error_buffer),
                     "Address bus slow test failed at 0x%p expected 0x%x found 0x%x",
-                    &mem_base[i], ((i % 2) ? pattern : antipattern), mem_base[i]);
+                    &mem_base[i], pattern, mem_base[i]);
                 __fatal_error(error_buffer);
                 #endif
                 return false;

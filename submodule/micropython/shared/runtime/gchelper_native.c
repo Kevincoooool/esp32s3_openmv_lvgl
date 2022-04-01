@@ -35,13 +35,7 @@
 // provided by gchelper_*.s
 uintptr_t gc_helper_get_regs_and_sp(uintptr_t *regs);
 
-extern uint32_t _ram_start;
-extern uint32_t _ebss;
-
 MP_NOINLINE void gc_helper_collect_regs_and_stack(void) {
-    // scan everything in RAM before the heap this includes the data and bss segments
-    gc_collect_root((void**)&_ram_start, ((uint32_t)&_ebss - (uint32_t)&_ram_start) / sizeof(uint32_t));
-
     // get the registers and the sp
     gc_helper_regs_t regs;
     uintptr_t sp = gc_helper_get_regs_and_sp(regs);

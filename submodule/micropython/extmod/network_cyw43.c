@@ -29,7 +29,6 @@
 #include "py/runtime.h"
 #include "py/objstr.h"
 #include "py/mphal.h"
-#include "py/mperrno.h"
 
 #if MICROPY_PY_NETWORK_CYW43
 
@@ -211,14 +210,13 @@ STATIC mp_obj_t network_cyw43_scan(size_t n_args, const mp_obj_t *pos_args, mp_m
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(network_cyw43_scan_obj, 1, network_cyw43_scan);
 
 STATIC mp_obj_t network_cyw43_connect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_essid, ARG_key, ARG_auth, ARG_bssid, ARG_channel, ARG_timeout };
+    enum { ARG_essid, ARG_key, ARG_auth, ARG_bssid, ARG_channel };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_essid, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
         { MP_QSTR_key, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
         { MP_QSTR_auth, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
         { MP_QSTR_bssid, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
         { MP_QSTR_channel, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
-        { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = -1} },
     };
 
     network_cyw43_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
@@ -243,18 +241,6 @@ STATIC mp_obj_t network_cyw43_connect(size_t n_args, const mp_obj_t *pos_args, m
     int ret = cyw43_wifi_join(self->cyw, ssid.len, ssid.buf, key.len, key.buf, args[ARG_auth].u_int, bssid.buf, args[ARG_channel].u_int);
     if (ret != 0) {
         mp_raise_OSError(-ret);
-    }
-
-    int timeout = args[ARG_timeout].u_int;
-    if (timeout != -1) {
-        // Wait for connection
-        uint32_t start = mp_hal_ticks_ms();
-        while (cyw43_tcpip_link_status(self->cyw, self->itf) != 3) {
-            if (timeout > 0 && mp_hal_ticks_ms() - start > timeout) {
-                mp_raise_OSError(MP_ETIMEDOUT);
-            }
-            MICROPY_EVENT_POLL_HOOK
-        }
     }
     return mp_const_none;
 }

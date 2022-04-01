@@ -88,9 +88,6 @@
 #define MICROPY_PY_SYS              (1)
 #define MICROPY_PY_SYS_EXIT         (0)
 #define MICROPY_PY_SYS_PLATFORM     "linux"
-#ifndef MICROPY_PY_SYS_PATH_DEFAULT
-#define MICROPY_PY_SYS_PATH_DEFAULT ".frozen:~/.micropython/lib:/usr/lib/micropython"
-#endif
 #define MICROPY_PY_SYS_MAXSIZE      (0)
 #define MICROPY_PY_SYS_STDFILES     (0)
 #define MICROPY_PY_CMATH            (0)

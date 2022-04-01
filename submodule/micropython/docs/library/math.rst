@@ -11,6 +11,9 @@ working with floating-point numbers.
 
 *Note:* On the pyboard, floating-point numbers have 32-bit precision.
 
+Availability: not available on WiPy. Floating point support required
+for this module.
+
 Functions
 ---------
 

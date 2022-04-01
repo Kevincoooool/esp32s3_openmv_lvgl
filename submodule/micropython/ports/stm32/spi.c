@@ -97,6 +97,8 @@ const spi_t spi_obj[6] = {
     #endif
 };
 
+#if defined(STM32H7)
+// STM32H7 HAL requires SPI IRQs to be enabled and handled.
 #if defined(MICROPY_HW_SPI1_SCK)
 void SPI1_IRQHandler(void) {
     IRQ_ENTER(SPI1_IRQn);
@@ -139,6 +141,7 @@ void SPI6_IRQHandler(void) {
     IRQ_EXIT(SPI6_IRQn);
 }
 #endif
+#endif
 
 void spi_init0(void) {
     // Initialise the SPI handles.
@@ -161,15 +164,6 @@ void spi_init0(void) {
     #if defined(MICROPY_HW_SPI6_SCK)
     SPIHandle6.Instance = SPI6;
     #endif
-}
-
-void spi_deinit_all(void) {
-    for (int i = 0; i < (sizeof(spi_obj) / sizeof(spi_t)); i++) {
-        const spi_t *spi = &spi_obj[i];
-        if (spi->spi != NULL) {
-            spi_deinit(spi);
-        }
-    }
 }
 
 int spi_find_index(mp_obj_t id) {
@@ -421,17 +415,15 @@ void spi_init(const spi_t *self, bool enable_nss_pin) {
     dma_invalidate_channel(self->tx_dma_descr);
     dma_invalidate_channel(self->rx_dma_descr);
 
+    #if defined(STM32H7)
     NVIC_SetPriority(irqn, IRQ_PRI_SPI);
     HAL_NVIC_EnableIRQ(irqn);
+    #else
+    (void)irqn;
+    #endif
 }
 
 void spi_deinit(const spi_t *spi_obj) {
-    if (spi_obj->rx_dma_descr != NULL) {
-        dma_deinit(spi_obj->rx_dma_descr);
-    }
-    if (spi_obj->tx_dma_descr != NULL) {
-        dma_deinit(spi_obj->tx_dma_descr);
-    }
     SPI_HandleTypeDef *spi = spi_obj->spi;
     HAL_SPI_DeInit(spi);
     if (0) {
@@ -489,14 +481,7 @@ STATIC HAL_StatusTypeDef spi_wait_dma_finished(const spi_t *spi, uint32_t t_star
             enable_irq(irq_state);
             return HAL_OK;
         }
-        // See DM00257543 2.2.5
-        // The DTCM-RAM is not accessible in read during Sleep mode (when the CPU clock is
-        // gated). When a read access to the DTCM-RAM is performed by an AHB bus master
-        // (that are the DMAs) while the CPU is in sleep mode (CPU clock is gated), the
-        // data is not transmitted to the AHB bus and the AHB master reads 0x0000_0000.
-        #if !defined(STM32F7)
         __WFI();
-        #endif
         enable_irq(irq_state);
         if (HAL_GetTick() - t_start >= timeout) {
             return HAL_TIMEOUT;
@@ -516,10 +501,8 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
 
     if (dest == NULL) {
         // send only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(src)) {
-            mp_uint_t atomic_state = MICROPY_BEGIN_ATOMIC_SECTION();
-            status = HAL_SPI_Transmit(self->spi, (uint8_t*)src, len, timeout);
-            MICROPY_END_ATOMIC_SECTION(atomic_state);
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+            status = HAL_SPI_Transmit(self->spi, (uint8_t *)src, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma;
             dma_init(&tx_dma, self->tx_dma_descr, DMA_MEMORY_TO_PERIPH, self->spi);
@@ -544,10 +527,8 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else if (src == NULL) {
         // receive only
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(dest)) {
-            mp_uint_t atomic_state = MICROPY_BEGIN_ATOMIC_SECTION();
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
             status = HAL_SPI_Receive(self->spi, dest, len, timeout);
-            MICROPY_END_ATOMIC_SECTION(atomic_state);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;
             if (self->spi->Init.Mode == SPI_MODE_MASTER) {
@@ -581,10 +562,8 @@ void spi_transfer(const spi_t *self, size_t len, const uint8_t *src, uint8_t *de
         }
     } else {
         // send and receive
-        if (len == 1 || query_irq() == IRQ_STATE_DISABLED || !DMA_BUFFER(src) || !DMA_BUFFER(dest)) {
-            mp_uint_t atomic_state = MICROPY_BEGIN_ATOMIC_SECTION();
-            status = HAL_SPI_TransmitReceive(self->spi, (uint8_t*)src, dest, len, timeout);
-            MICROPY_END_ATOMIC_SECTION(atomic_state);
+        if (len == 1 || query_irq() == IRQ_STATE_DISABLED) {
+            status = HAL_SPI_TransmitReceive(self->spi, (uint8_t *)src, dest, len, timeout);
         } else {
             DMA_HandleTypeDef tx_dma, rx_dma;
             dma_init(&tx_dma, self->tx_dma_descr, DMA_MEMORY_TO_PERIPH, self->spi);

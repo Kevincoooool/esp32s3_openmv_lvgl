@@ -21,15 +21,17 @@ Timer callbacks.
     :func:`micropython.alloc_emergency_exception_buf` for how to get around this
     limitation.
 
+If you are using a WiPy board please refer to :ref:`machine.TimerWiPy <machine.TimerWiPy>`
+instead of this class.
+
 Constructors
 ------------
 
-.. class:: Timer(id, /, ...)
+.. class:: Timer(id, ...)
 
-   Construct a new timer object of the given ``id``. ``id`` of -1 constructs a
+   Construct a new timer object of the given id. Id of -1 constructs a
    virtual timer (if supported by a board).
-   ``id`` shall not be passed as a keyword argument.
-
+   
    See ``init`` for parameters of initialisation.
 
 Methods
@@ -39,14 +41,8 @@ Methods
 
    Initialise the timer. Example::
 
-       def mycallback(t):
-           pass
-
-       # periodic with 100ms period
-       tim.init(period=100, callback=mycallback)
-
-       # one shot firing after 1000ms
-       tim.init(mode=Timer.ONE_SHOT, period=1000, callback=mycallback)
+       tim.init(period=100)                         # periodic with 100ms period
+       tim.init(mode=Timer.ONE_SHOT, period=1000)   # one shot firing after 1000ms
 
    Keyword arguments:
 
@@ -56,14 +52,6 @@ Methods
          period of the channel expires.
        - ``Timer.PERIODIC`` - The timer runs periodically at the configured
          frequency of the channel.
-
-     - ``period`` - The timer period, in milliseconds.
-
-     - ``callback`` - The callable to call upon expiration of the timer period.
-       The callback must take one argument, which is passed the Timer object.
-       The ``callback`` argument shall be specified. Otherwise an exception
-       will occurr upon timer expiration:
-       ``TypeError: 'NoneType' object isn't callable``
 
 .. method:: Timer.deinit()
 

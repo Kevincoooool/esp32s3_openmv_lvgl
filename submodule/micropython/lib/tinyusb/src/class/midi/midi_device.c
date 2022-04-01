@@ -122,12 +122,7 @@ static void _prep_out_transaction (midid_interface_t* p_midi)
 uint32_t tud_midi_n_available(uint8_t itf, uint8_t cable_num)
 {
   (void) cable_num;
-
-  midid_interface_t* midi = &_midid_itf[itf];
-  midid_stream_t const* stream = &midi->stream_read;
-
-  // when using with packet API stream total & index are both zero
-  return tu_fifo_count(&midi->rx_ff) + (stream->total - stream->index);
+  return tu_fifo_count(&_midid_itf[itf].rx_ff);
 }
 
 uint32_t tud_midi_n_stream_read(uint8_t itf, uint8_t cable_num, void* buffer, uint32_t bufsize)
@@ -202,11 +197,9 @@ uint32_t tud_midi_n_stream_read(uint8_t itf, uint8_t cable_num, void* buffer, ui
 
 bool tud_midi_n_packet_read (uint8_t itf, uint8_t packet[4])
 {
-  midid_interface_t* midi = &_midid_itf[itf];
-  TU_VERIFY(midi->ep_out);
-
-  uint32_t const num_read = tu_fifo_read_n(&midi->rx_ff, packet, 4);
-  _prep_out_transaction(midi);
+  midid_interface_t* p_midi = &_midid_itf[itf];
+  uint32_t num_read = tu_fifo_read_n(&p_midi->rx_ff, packet, 4);
+  _prep_out_transaction(p_midi);
   return (num_read == 4);
 }
 
@@ -241,19 +234,19 @@ static uint32_t write_flush(midid_interface_t* midi)
 uint32_t tud_midi_n_stream_write(uint8_t itf, uint8_t cable_num, uint8_t const* buffer, uint32_t bufsize)
 {
   midid_interface_t* midi = &_midid_itf[itf];
-  TU_VERIFY(midi->ep_in, 0);
+  TU_VERIFY(midi->itf_num, 0);
 
   midid_stream_t* stream = &midi->stream_write;
 
+  uint32_t total_written = 0;
   uint32_t i = 0;
-  while ( (i < bufsize) && (tu_fifo_remaining(&midi->tx_ff) >= 4) )
+  while ( i < bufsize )
   {
     uint8_t const data = buffer[i];
-    i++;
 
     if ( stream->index == 0 )
     {
-      //------------- New event packet -------------//
+      // new event packet
 
       uint8_t const msg = data >> 4;
 
@@ -315,9 +308,9 @@ uint32_t tud_midi_n_stream_write(uint8_t itf, uint8_t cable_num, uint8_t const* 
     }
     else
     {
-      //------------- On-going (buffering) packet -------------//
+      // On-going (buffering) packet
 
-      TU_ASSERT(stream->index < 4, i);
+      TU_ASSERT(stream->index < 4, total_written);
       stream->buffer[stream->index] = data;
       stream->index++;
 
@@ -340,20 +333,27 @@ uint32_t tud_midi_n_stream_write(uint8_t itf, uint8_t cable_num, uint8_t const* 
       // complete current event packet, reset stream
       stream->index = stream->total = 0;
 
-      // FIFO overflown, since we already check fifo remaining. It is probably race condition
-      TU_ASSERT(count == 4, i);
+      // fifo overflow, here we assume FIFO is multiple of 4 and didn't check remaining before writing
+      if ( count != 4 ) break;
+
+      // updated written if succeeded
+      total_written = i;
     }
+
+    i++;
   }
 
   write_flush(midi);
 
-  return i;
+  return total_written;
 }
 
 bool tud_midi_n_packet_write (uint8_t itf, uint8_t const packet[4])
 {
   midid_interface_t* midi = &_midid_itf[itf];
-  TU_VERIFY(midi->ep_in);
+  if (midi->itf_num == 0) {
+    return 0;
+  }
 
   if (tu_fifo_remaining(&midi->tx_ff) < 4) return false;
 
@@ -435,7 +435,6 @@ uint16_t midid_open(uint8_t rhport, tusb_desc_interface_t const * desc_itf, uint
   }
 
   p_midi->itf_num = desc_midi->bInterfaceNumber;
-  (void) p_midi->itf_num;
 
   // next descriptor
   drv_len += tu_desc_len(p_desc);

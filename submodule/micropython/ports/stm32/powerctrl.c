@@ -662,10 +662,12 @@ void powerctrl_enter_stop_mode(void) {
     // executed until after the clocks are reconfigured
     uint32_t irq_state = disable_irq();
 
+    #if defined(STM32H7)
     // Disable SysTick Interrupt
     // Note: This seems to be required at least on the H7 REV Y,
     // otherwise the MCU will leave stop mode immediately on entry.
     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+    #endif
 
     #if defined(MICROPY_BOARD_ENTER_STOP)
     MICROPY_BOARD_ENTER_STOP
@@ -697,23 +699,10 @@ void powerctrl_enter_stop_mode(void) {
     }
     #endif
 
-    #if defined(STM32H7)
-    // Clear any pending EXTIs.
-    EXTI_D1->PR1 = 0x3fffff; __ISB(); __DSB();
-    #endif
-
-    #if defined(MICROPY_BOARD_OSC_DISABLE)
-    MICROPY_BOARD_OSC_DISABLE
-    #endif
-
     #if defined(STM32F7)
     HAL_PWR_EnterSTOPMode((PWR_CR1_LPDS | PWR_CR1_LPUDS | PWR_CR1_FPDS | PWR_CR1_UDEN), PWR_STOPENTRY_WFI);
     #else
     HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-    #endif
-
-    #if defined(MICROPY_BOARD_OSC_ENABLE)
-    MICROPY_BOARD_OSC_ENABLE
     #endif
 
     // reconfigure the system clock after waking up
@@ -831,14 +820,16 @@ void powerctrl_enter_stop_mode(void) {
     }
     #endif
 
-    #endif // defined(STM32F0)
+    #endif
 
     #if defined(MICROPY_BOARD_LEAVE_STOP)
     MICROPY_BOARD_LEAVE_STOP
     #endif
 
+    #if defined(STM32H7)
     // Enable SysTick Interrupt
     SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+    #endif
 
     // Enable IRQs now that all clocks are reconfigured
     enable_irq(irq_state);
@@ -849,18 +840,6 @@ void powerctrl_enter_standby_mode(void) {
 
     #if defined(MICROPY_BOARD_ENTER_STANDBY)
     MICROPY_BOARD_ENTER_STANDBY
-    #endif
-
-    // Disable SysTick Interrupt
-    // Note: This seems to be required at least on the H747,
-    // otherwise the MCU will leave stop mode immediately on entry.
-    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-
-    #if defined(MCU_SERIES_H7)
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
-    // Wait for PWR_FLAG_VOSRDY
-    while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
-    }
     #endif
 
     // We need to clear the PWR wake-up-flag before entering standby, since
@@ -932,13 +911,7 @@ void powerctrl_enter_standby_mode(void) {
     PWR->CSR1 |= PWR_CSR1_EIWUP;
     #endif
 
-    #if defined(MICROPY_BOARD_OSC_DISABLE)
-    MICROPY_BOARD_OSC_DISABLE
-    #endif
-
     // enter standby mode
     HAL_PWR_EnterSTANDBYMode();
     // we never return; MCU is reset on exit from standby
-    // But just in case...
-    NVIC_SystemReset();
 }

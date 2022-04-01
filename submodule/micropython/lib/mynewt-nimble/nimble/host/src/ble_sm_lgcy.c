@@ -24,7 +24,6 @@
 #include "host/ble_sm.h"
 #include "ble_hs_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 #if MYNEWT_VAL(BLE_SM_LEGACY)
 
 /**
@@ -252,5 +251,4 @@ ble_sm_lgcy_random_rx(struct ble_sm_proc *proc, struct ble_sm_result *res)
     res->execute = 1;
 }
 
-#endif
 #endif

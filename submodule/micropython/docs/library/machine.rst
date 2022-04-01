@@ -105,6 +105,12 @@ Power related functions
      return `machine.DEEPSLEEP` and this can be used to distinguish a deepsleep wake
      from other resets.
 
+.. function:: wake_reason()
+
+   Get the wake reason. See :ref:`constants <machine_constants>` for the possible return values.
+
+   Availability: ESP32, WiPy.
+
 Miscellaneous functions
 -----------------------
 
@@ -197,7 +203,9 @@ Classes
    machine.UART.rst
    machine.SPI.rst
    machine.I2C.rst
-   machine.I2S.rst
+   machine.I2S.rst   
    machine.RTC.rst
    machine.Timer.rst
    machine.WDT.rst
+   machine.SD.rst
+   machine.SDCard.rst

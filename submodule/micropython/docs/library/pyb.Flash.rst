@@ -48,6 +48,6 @@ Methods
 Hardware Note
 -------------
 
-On boards with external spiflash (e.g. Pyboard D or the OpenMV Cam H7 Plus), the MicroPython firmware will
+On boards with external spiflash (e.g. Pyboard D), the MicroPython firmware will
 be configured to use that as the primary flash storage. On all other boards, the
 internal flash inside the :term:`MCU` will be used.

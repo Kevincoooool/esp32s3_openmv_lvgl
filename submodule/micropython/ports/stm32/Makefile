@@ -25,7 +25,7 @@ QSTR_GLOBAL_DEPENDENCIES += mpconfigboard_common.h $(BOARD_DIR)/mpconfigboard.h 
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
 
 # File containing description of content to be frozen into firmware.
-#FROZEN_MANIFEST ?= boards/manifest.py
+FROZEN_MANIFEST ?= boards/manifest.py
 
 # Location of mboot (or other bootloader) if the device has one.
 # Used by machine.bootloader().
@@ -34,14 +34,14 @@ MBOOT_TEXT0_ADDR ?= 0x08000000
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-GIT_SUBMODULES = lib/lwip lib/mbedtls lib/mynewt-nimble lib/stm32lib
+GIT_SUBMODULES += lib/libhydrogen lib/lwip lib/mbedtls lib/stm32lib
 
 MCU_SERIES_UPPER = $(shell echo $(MCU_SERIES) | tr '[:lower:]' '[:upper:]')
 CMSIS_MCU_LOWER = $(shell echo $(CMSIS_MCU) | tr '[:upper:]' '[:lower:]')
 
 LD_DIR=boards
-CMSIS_DIR=$(TOP_DIR)/hal/cmsis
-HAL_DIR=$(TOP_DIR)/sthal/$(MCU_SERIES)
+CMSIS_DIR=$(TOP)/lib/stm32lib/CMSIS/STM32$(MCU_SERIES_UPPER)xx/Include
+HAL_DIR=lib/stm32lib/STM32$(MCU_SERIES_UPPER)xx_HAL_Driver
 USBDEV_DIR=usbdev
 #USBHOST_DIR=usbhost
 DFU=$(TOP)/tools/dfu.py
@@ -62,8 +62,11 @@ SYSTEM_FILE ?= lib/stm32lib/CMSIS/STM32$(MCU_SERIES_UPPER)xx/Source/Templates/sy
 CROSS_COMPILE ?= arm-none-eabi-
 
 INC += -I.
-INC += -I..
+INC += -I$(TOP)
 INC += -I$(BUILD)
+INC += -I$(TOP)/lib/cmsis/inc
+INC += -I$(CMSIS_DIR)/
+INC += -I$(TOP)/$(HAL_DIR)/Inc
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 #INC += -I$(USBHOST_DIR)
 INC += -Ilwip_inc
@@ -74,7 +77,7 @@ CFLAGS_CORTEX_M = -mthumb
 # Select hardware floating-point support
 SUPPORTS_HARDWARE_FP_SINGLE = 0
 SUPPORTS_HARDWARE_FP_DOUBLE = 0
-ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32F765xx STM32F767xx STM32F769xx STM32H743xx STM32H747xx STM32H750xx STM32H7A3xx STM32H7A3xxQ STM32H7B3xx STM32H7B3xxQ))
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32F765xx STM32F767xx STM32F769xx STM32H743xx STM32H750xx STM32H7A3xx STM32H7A3xxQ STM32H7B3xx STM32H7B3xxQ))
 CFLAGS_CORTEX_M += -mfpu=fpv5-d16 -mfloat-abi=hard
 SUPPORTS_HARDWARE_FP_SINGLE = 1
 SUPPORTS_HARDWARE_FP_DOUBLE = 1
@@ -96,7 +99,7 @@ CFLAGS_MCU_l4 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_h7 = $(CFLAGS_CORTEX_M) -mtune=cortex-m7 -mcpu=cortex-m7
 CFLAGS_MCU_wb = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 
-CFLAGS += $(INC) -Wall -Wpointer-arith -Werror -Wdouble-promotion -Wfloat-conversion -std=gnu99 -nostdlib -fno-inline-small-functions $(CFLAGS_MOD) $(CFLAGS_EXTRA)
+CFLAGS += $(INC) -Wall -Wpointer-arith -Werror -Wdouble-promotion -Wfloat-conversion -std=gnu99 -nostdlib $(CFLAGS_MOD) $(CFLAGS_EXTRA)
 CFLAGS += -D$(CMSIS_MCU) -DUSE_FULL_LL_DRIVER
 CFLAGS += $(CFLAGS_MCU_$(MCU_SERIES))
 CFLAGS += $(COPT)
@@ -104,7 +107,6 @@ CFLAGS += -I$(BOARD_DIR)
 CFLAGS += -DSTM32_HAL_H='<stm32$(MCU_SERIES)xx_hal.h>'
 CFLAGS += -DMBOOT_VTOR=$(MBOOT_TEXT0_ADDR)
 CFLAGS += -DMICROPY_HW_VTOR=$(TEXT0_ADDR)
-CFLAGS += -DLWIP_HTTPD_CGI=1 -DLWIP_HTTPD_SSI=1
 
 # Configure for nan-boxing object model if requested
 ifeq ($(NANBOX),1)
@@ -136,12 +138,12 @@ LDFLAGS += --gc-sections
 
 # Debugging/Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -ggdb3
+CFLAGS += -g -DPENDSV_DEBUG
 COPT = -Og
 # Disable text compression in debug builds
 MICROPY_ROM_TEXT_COMPRESSION = 0
 else
-COPT += -O2 -DNDEBUG
+COPT += -Os -DNDEBUG
 endif
 
 # Flags for optional C++ source code
@@ -223,8 +225,6 @@ endif
 else
 LIBM_SRC_C += $(addprefix lib/libm/,\
 	math.c \
-	roundf.c \
-	thumb_vfp_sqrtf.c \
 	acoshf.c \
 	asinfacosf.c \
 	asinhf.c \
@@ -278,7 +278,9 @@ DRIVERS_SRC_C += $(addprefix drivers/,\
 	dht/dht.c \
 	)
 
-SRC_C = \
+SRC_C += \
+	boardctrl.c \
+	main.c \
 	stm32_it.c \
 	usbd_conf.c \
 	usbd_desc.c \
@@ -347,7 +349,6 @@ SRC_C = \
 	servo.c \
 	dac.c \
 	adc.c \
-	posix_helpers.c \
 	$(wildcard $(BOARD_DIR)/*.c)
 
 SRC_CXX += \
@@ -369,6 +370,7 @@ SRC_O += \
 	shared/runtime/gchelper_m0.o
 else
 SRC_O += \
+	system_stm32.o \
 	resethandler.o \
 	shared/runtime/gchelper_m3.o
 endif
@@ -420,23 +422,13 @@ HAL_SRC_C += $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_,\
 	hal_dma_ex.c \
 	hal_dcmi.c \
 	)
-ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f4))
-# HAL F4-1.16.0 has a bug with missing parentheses in HAL_MMC_Erase.
-# This function is unused so let the error go by as a warning.
-$(BUILD)/$(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_hal_mmc.o: CFLAGS += -Wno-error=parentheses
-endif
 endif
 
 ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32H743xx STM32H750xx STM32H7A3xx STM32H7A3xxQ STM32H7B3xx STM32H7B3xxQ))
     HAL_SRC_C += $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_, hal_fdcan.c)
 else
-ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f0 f4 f7 h7))
+ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f0 f4 f7 h7 l4))
     HAL_SRC_C += $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_, hal_can.c)
-else
-ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),l4))
-HAL_SRC_C += $(addprefix $(HAL_DIR)/Src/Legacy/stm32$(MCU_SERIES)xx_, hal_can.c)
-$(BUILD)/$(HAL_DIR)/Src/Legacy/stm32$(MCU_SERIES)xx_hal_can.o: CFLAGS += -Wno-error=cpp
-endif
 endif
 endif
 
@@ -460,10 +452,6 @@ USBDEV_SRC_C += $(addprefix $(USBDEV_DIR)/,\
 	class/src/usbd_msc_bot.c \
 	class/src/usbd_msc_scsi.c \
 	)
-
-ifeq ($(MICROPY_PY_AUDIO),1)
-CFLAGS_MOD += -DMICROPY_PY_AUDIO=1
-endif
 
 ifeq ($(MICROPY_PY_BLUETOOTH),1)
 CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH=1
@@ -570,12 +558,45 @@ OBJ += $(addprefix $(BUILD)/, $(SRC_O))
 OBJ += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 OBJ += $(BUILD)/pins_$(BOARD).o
 
-all: $(OBJ)
+# This file contains performance critical functions so turn up the optimisation
+# level.  It doesn't add much to the code size and improves performance a bit.
+# Don't use -O3 with this file because gcc tries to optimise memset in terms of itself.
+$(BUILD)/shared/libc/string0.o: COPT += -O2
 
-ifneq ($(FROZEN_MANIFEST),)
+# We put several files into the first 16K section with the ISRs.
+# If we compile these using -O0 then it won't fit. So if you really want these
+# to be compiled with -O0, then edit boards/common.ld (in the .isr_vector section)
+# and comment out the following lines.
+$(BUILD)/$(OOFATFS_DIR)/ff.o: COPT += -Os
+$(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
+$(PY_BUILD)/formatfloat.o: COPT += -Os
+$(PY_BUILD)/parsenum.o: COPT += -Os
+$(PY_BUILD)/mpprint.o: COPT += -Os
+
+all: $(TOP)/lib/stm32lib/README.md all_main $(BUILD)/firmware.hex
+
+ifeq ($(MBOOT_ENABLE_PACKING),1)
+all_main: $(BUILD)/firmware.pack.dfu
+else
+all_main: $(BUILD)/firmware.dfu
+endif
+
+# For convenience, automatically fetch required submodules if they don't exist
+$(TOP)/lib/stm32lib/README.md:
+	$(ECHO) "stm32lib submodule not found, fetching it now..."
+	(cd $(TOP) && git submodule update --init lib/stm32lib)
+
+ifneq ($(FROZEN_MANIFEST)$(FROZEN_DIR),)
+# To use frozen source modules, put your .py files in a subdirectory (eg scripts/)
+# and then invoke make with FROZEN_DIR=scripts (be sure to build from scratch).
+CFLAGS += -DMICROPY_MODULE_FROZEN_STR
+endif
+
+ifneq ($(FROZEN_MANIFEST)$(FROZEN_MPY_DIR),)
+# To use frozen bytecode, put your .py files in a subdirectory (eg frozen/) and
+# then invoke make with FROZEN_MPY_DIR=frozen (be sure to build from scratch).
 CFLAGS += -DMICROPY_QSTR_EXTRA_POOL=mp_qstr_frozen_const_pool
 CFLAGS += -DMICROPY_MODULE_FROZEN_MPY
-CFLAGS += -DMICROPY_MODULE_FROZEN_STR
 endif
 
 define RUN_DFU
@@ -708,12 +729,12 @@ INSERT_USB_IDS = $(TOP)/tools/insert-usb-ids.py
 FILE2H = $(TOP)/tools/file2h.py
 
 USB_IDS_FILE = mpconfigboard_common.h
-CDCINF_TEMPLATE = openmv.inf_template
-GEN_CDCINF_FILE = $(HEADER_BUILD)/openmv.inf
-GEN_CDCINF_HEADER = $(HEADER_BUILD)/openmv_inf.h
+CDCINF_TEMPLATE = pybcdc.inf_template
+GEN_CDCINF_FILE = $(HEADER_BUILD)/pybcdc.inf
+GEN_CDCINF_HEADER = $(HEADER_BUILD)/pybcdc_inf.h
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_CXX) $(SRC_MOD) $(LIB_SRC_C) $(EXTMOD_SRC_C) $(OMV_SRC_QSTR)
+SRC_QSTR += $(SRC_C) $(SRC_CXX) $(SRC_MOD) $(SHARED_SRC_C) $(EXTMOD_SRC_C)
 # Append any auto-generated sources that are needed by sources listed in
 # SRC_QSTR
 SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
@@ -749,7 +770,7 @@ GEN_PLLFREQTABLE_HDR = $(HEADER_BUILD)/pllfreqtable.h
 GEN_STMCONST_HDR = $(HEADER_BUILD)/modstm_const.h
 GEN_STMCONST_QSTR = $(BUILD)/modstm_qstr.h
 GEN_STMCONST_MPZ = $(HEADER_BUILD)/modstm_mpz.h
-CMSIS_MCU_HDR = $(CMSIS_DIR)/include/st/$(CMSIS_MCU_LOWER).h
+CMSIS_MCU_HDR = $(CMSIS_DIR)/$(CMSIS_MCU_LOWER).h
 
 modmachine.c: $(GEN_PLLFREQTABLE_HDR)
 $(GEN_PLLFREQTABLE_HDR): $(PLLVALUES) | $(HEADER_BUILD)

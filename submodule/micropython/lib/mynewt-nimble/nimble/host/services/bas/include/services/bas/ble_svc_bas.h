@@ -28,6 +28,4 @@
 
 int ble_svc_bas_battery_level_set(uint8_t level);
 
-void ble_svc_bas_init(void);
-
 #endif

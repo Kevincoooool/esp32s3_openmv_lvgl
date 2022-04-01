@@ -169,8 +169,3 @@ void mp_hal_get_mac_ascii(int idx, size_t chr_off, size_t chr_len, char *dest) {
         *dest++ = hexchr[mac[chr_off >> 1] >> (4 * (1 - (chr_off & 1))) & 0xf];
     }
 }
-
-extern int errno;
-int *__errno() {
-    return &errno;
-}

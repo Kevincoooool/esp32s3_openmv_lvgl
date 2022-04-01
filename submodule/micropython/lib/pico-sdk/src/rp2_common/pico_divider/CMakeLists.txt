@@ -21,7 +21,6 @@ if (NOT TARGET pico_divider)
 
     target_link_libraries(pico_divider_hardware_explicit INTERFACE
             pico_divider_headers
-            hardware_divider
             hardware_regs
             )
 

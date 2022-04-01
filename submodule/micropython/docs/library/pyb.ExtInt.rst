@@ -18,7 +18,7 @@ Note: ExtInt will automatically configure the gpio line as an input. ::
 
     extint = pyb.ExtInt(pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, callback)
 
-Now every time a falling edge is seen on the pin, the callback will be
+Now every time a falling edge is seen on the X1 pin, the callback will be
 called. Caution: mechanical pushbuttons have "bounce" and pushing or
 releasing a switch will often generate multiple edges.
 See: http://www.eng.utah.edu/~cs5780/debouncing.pdf for a detailed

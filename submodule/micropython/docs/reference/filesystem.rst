@@ -34,8 +34,7 @@ mounted.
 
 On STM32 / Pyboard, the internal flash is mounted at ``/flash``, and optionally
 the SDCard at ``/sd``. On ESP8266/ESP32, the primary filesystem is mounted at
-``/``. On the OpenMV Cam the internal flash is mounted at ``/`` unless an SDCard
-is installed which will be moutned at ``/`` instead.
+``/``.
 
 Block devices
 -------------
@@ -54,8 +53,8 @@ MicroPython will attempt to create a FAT filesystem spanning the entire flash.
 Ports can also provide a mechanism to "factory reset" the primary flash, usually
 by some combination of button presses at power on.
 
-STM32 / Pyboard / OpenMV Cam
-............................
+STM32 / Pyboard
+...............
 
 The :ref:`pyb.Flash <pyb.Flash>` class provides access to the internal flash. On some
 boards which have larger external flash (e.g. Pyboard D), it will use that
@@ -220,6 +219,15 @@ resistant to filesystem corruption.
           situations, for details see `littlefs issue 347`_  and
           `littlefs issue 295`_.
 
+Note: It can be still be accessed over USB MSC using the `littlefs FUSE
+driver`_. Note that you must use the ``-b=4096`` option to override the block
+size.
+
+.. _littlefs FUSE driver: https://github.com/ARMmbed/littlefs-fuse/tree/master/littlefs
+.. _Littlefs: https://github.com/ARMmbed/littlefs
+.. _littlefs issue 295: https://github.com/ARMmbed/littlefs/issues/295
+.. _littlefs issue 347: https://github.com/ARMmbed/littlefs/issues/347
+
 To format the entire flash using littlefs v2::
 
     # ESP8266 and ESP32
@@ -234,27 +242,6 @@ To format the entire flash using littlefs v2::
     os.VfsLfs2.mkfs(pyb.Flash(start=0))
     os.mount(pyb.Flash(start=0), '/flash')
     os.chdir('/flash')
-
-A littlefs filesystem can be still be accessed on a PC over USB MSC using the
-`littlefs FUSE driver`_.  Note that you must specify both the ``--block_size``
-and ``--block_count`` options to override the defaults.  For example (after
-building the littlefs-fuse executable)::
-
-    $ ./lfs --block_size=4096 --block_count=512 -o allow_other /dev/sdb1 mnt
-
-This will allow the board's littlefs filesystem to be accessed at the ``mnt``
-directory.  To get the correct values of ``block_size`` and ``block_count`` use::
-
-    import pyb
-    f = pyb.Flash(start=0)
-    f.ioctl(1, 1)  # initialise flash in littlefs raw-block mode
-    block_count = f.ioctl(4, 0)
-    block_size = f.ioctl(5, 0)
-
-.. _littlefs FUSE driver: https://github.com/littlefs-project/littlefs-fuse
-.. _Littlefs: https://github.com/littlefs-project/littlefs
-.. _littlefs issue 295: https://github.com/littlefs-project/littlefs/issues/295
-.. _littlefs issue 347: https://github.com/littlefs-project/littlefs/issues/347
 
 Hybrid (STM32)
 ~~~~~~~~~~~~~~

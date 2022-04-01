@@ -69,13 +69,6 @@ void pendsv_kbd_intr(void) {
     }
 }
 
-// This will always force the exception by using the hardware PENDSV 
-void pendsv_nlr_jump(void *o) {
-    MP_STATE_MAIN_THREAD(mp_pending_exception) = MP_OBJ_NULL;
-    pendsv_object = o;
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-}
-
 #if defined(PENDSV_DISPATCH_NUM_SLOTS)
 void pendsv_schedule_dispatch(size_t slot, pendsv_dispatch_t f) {
     pendsv_dispatch_table[slot] = f;
@@ -144,8 +137,6 @@ __attribute__((naked)) void PendSV_Handler(void) {
         "ldr r0, [r1]\n"
         "cmp r0, #0\n"
         "beq .no_obj\n"
-        "mov r2, #0x01000000 \n"        // Modify stacked XPSR to make sure
-        "str r2, [sp, #28] \n"          // possible LDM/STM progress is cleared.
         #if defined(PENDSV_DEBUG)
         "str r0, [sp, #8]\n"            // store to r0 on stack
         #else

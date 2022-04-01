@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "pico.h"
+#include "hardware/platform_defs.h"
 #include "hardware/irq.h"
 
 #if !PICO_DISABLE_SHARED_IRQ_HANDLERS

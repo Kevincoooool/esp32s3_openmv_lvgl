@@ -393,8 +393,8 @@ static int8_t SCSI_RequestSense (USBD_HandleTypeDef  *pdev, uint8_t lun, uint8_t
   if((hmsc->scsi_sense_head != hmsc->scsi_sense_tail)) {
 
     hmsc->bot_data[2]     = hmsc->scsi_sense[hmsc->scsi_sense_head].Skey;
-    hmsc->bot_data[12]    = hmsc->scsi_sense[hmsc->scsi_sense_head].w.b.ASC;
-    hmsc->bot_data[13]    = hmsc->scsi_sense[hmsc->scsi_sense_head].w.b.ASCQ;
+    hmsc->bot_data[12]    = hmsc->scsi_sense[hmsc->scsi_sense_head].w.b.ASCQ;
+    hmsc->bot_data[13]    = hmsc->scsi_sense[hmsc->scsi_sense_head].w.b.ASC;
     hmsc->scsi_sense_head++;
 
     if (hmsc->scsi_sense_head == SENSE_LIST_DEEPTH)
@@ -424,33 +424,8 @@ void SCSI_SenseCode(USBD_HandleTypeDef  *pdev, uint8_t lun, uint8_t sKey, uint8_
 {
   USBD_MSC_BOT_HandleTypeDef *hmsc = &((usbd_cdc_msc_hid_state_t*)pdev->pClassData)->MSC_BOT_ClassData;
 
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].Skey = sKey;
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].w.b.ASC = ASC;
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].w.b.ASCQ = 0U;
-  hmsc->scsi_sense_tail++;
-
-  if (hmsc->scsi_sense_tail == SENSE_LIST_DEEPTH)
-  {
-    hmsc->scsi_sense_tail = 0;
-  }
-}
-/**
-* @brief  SCSI_SenseCode2
-*         Load the last error code in the error list
-* @param  lun: Logical unit number
-* @param  sKey: Sense Key
-* @param  ASC: Additional Sense Code
-* @param  ASCQ:Additional Sense Code Qualifier
-* @retval none
-
-*/
-void SCSI_SenseCode2(USBD_HandleTypeDef  *pdev, uint8_t lun, uint8_t sKey, uint8_t ASC, uint8_t ASCQ)
-{
-  USBD_MSC_BOT_HandleTypeDef *hmsc = &((usbd_cdc_msc_hid_state_t*)pdev->pClassData)->MSC_BOT_ClassData;
-
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].Skey = sKey;
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].w.b.ASC = ASC;
-  hmsc->scsi_sense[hmsc->scsi_sense_tail].w.b.ASCQ = ASCQ;
+  hmsc->scsi_sense[hmsc->scsi_sense_tail].Skey  = sKey;
+  hmsc->scsi_sense[hmsc->scsi_sense_tail].w.ASC = ASC << 8;
   hmsc->scsi_sense_tail++;
   if (hmsc->scsi_sense_tail == SENSE_LIST_DEEPTH)
   {

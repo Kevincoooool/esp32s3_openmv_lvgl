@@ -1,5 +1,4 @@
 # test constant optimisation
-# This test will only work when MICROPY_COMP_CONST is enabled.
 
 from micropython import const
 

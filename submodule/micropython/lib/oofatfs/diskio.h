@@ -1,3 +1,7 @@
+/* This file is part of ooFatFs, a customised version of FatFs
+ * See https://github.com/micropython/oofatfs for details
+ */
+
 /*-----------------------------------------------------------------------/
 /  Low level disk interface modlue include file   (C)ChaN, 2014          /
 /-----------------------------------------------------------------------*/

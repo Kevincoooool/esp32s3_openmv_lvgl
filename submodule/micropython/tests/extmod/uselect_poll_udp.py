@@ -5,9 +5,7 @@ try:
 except ImportError:
     try:
         import socket, select
-
-        select.poll  # Raises AttributeError for CPython implementations without poll()
-    except (ImportError, AttributeError):
+    except ImportError:
         print("SKIP")
         raise SystemExit
 

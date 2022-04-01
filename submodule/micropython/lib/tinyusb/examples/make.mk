@@ -5,7 +5,7 @@
 # Build directory
 BUILD := _build/$(BOARD)
 
-PROJECT := $(notdir $(CURDIR))
+PROJECT := $(BOARD)-$(notdir $(CURDIR))
 BIN := $(TOP)/_bin/$(BOARD)/$(notdir $(CURDIR))
 
 # Handy check parameter function
@@ -65,12 +65,10 @@ MKDIR = mkdir
 ifeq ($(CMDEXE),1)
   CP = copy
   RM = del
-  PYTHON = python
 else
   SED = sed
   CP = cp
   RM = rm
-  PYTHON = python3
 endif
 
 #-------------- Source files and compiler flags --------------

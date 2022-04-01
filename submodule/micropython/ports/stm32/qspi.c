@@ -77,6 +77,8 @@ static inline void qspi_mpu_enable_mapped(void) {
     // At the moment this is hard-coded to 2MiB of QSPI address space.
     uint32_t irq_state = mpu_config_start();
     mpu_config_region(MPU_REGION_QSPI1, QSPI_MAP_ADDR, MPU_CONFIG_DISABLE(0x01, MPU_REGION_SIZE_256MB));
+    mpu_config_region(MPU_REGION_QSPI2, QSPI_MAP_ADDR, MPU_CONFIG_DISABLE(0x0f, MPU_REGION_SIZE_32MB));
+    mpu_config_region(MPU_REGION_QSPI3, QSPI_MAP_ADDR, MPU_CONFIG_DISABLE(0x01, MPU_REGION_SIZE_16MB));
     mpu_config_end(irq_state);
 }
 
@@ -195,8 +197,6 @@ STATIC void qspi_write_cmd_data(void *self_in, uint8_t cmd, size_t len, uint32_t
                 | 1 << QUADSPI_CCR_IMODE_Pos // instruction on 1 line
                 | cmd << QUADSPI_CCR_INSTRUCTION_Pos // write opcode
         ;
-
-        __DSB(); __ISB();
 
         // This assumes len==2
         *(uint16_t *)&QUADSPI->DR = data;
@@ -318,13 +318,7 @@ STATIC void qspi_read_cmd_qaddr_qdata(void *self_in, uint8_t cmd, uint32_t addr,
     ;
 
     QUADSPI->ABR = 0; // alternate byte: disable continuous read mode
-    QUADSPI->AR = addr; // address to read from
-
-    // Workaround for SR getting set immediately after setting the address.
-    if (QUADSPI->SR & 0x01) {
-        QUADSPI->FCR |= QUADSPI_FCR_CTEF;
-        QUADSPI->AR = addr; // address to read from
-    }
+    QUADSPI->AR = addr; // addres to read from
 
     // Read in the data 4 bytes at a time if dest is aligned
     if (((uintptr_t)dest & 3) == 0) {

@@ -92,7 +92,7 @@ void mp_task(void *pvParameter) {
     #endif
     // #if CONFIG_USB_ENABLED
     usb_cdc_init();
-    usb_msc_init();
+    // usb_msc_init();
     // #endif
     uart_init();
     
@@ -164,10 +164,10 @@ soft_reset:
     mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
     gc_init(mp_task_heap, mp_task_heap + mp_task_heap_size);
     mp_init();
-    // mp_obj_list_init(mp_sys_path, 0);
-    // mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
+    mp_obj_list_init(mp_sys_path, 0);
+    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_lib));
-    // mp_obj_list_init(mp_sys_argv, 0);
+    mp_obj_list_init(mp_sys_argv, 0);
     readline_init0();
 
     // initialise peripherals
@@ -175,8 +175,10 @@ soft_reset:
     // run boot-up scripts
     pyexec_frozen_module("_boot.py");
     sensor_init();
+#if CONFIG_USB_MSC_ENABLED
+    usb_msc_init();
+    #endif
     pyexec_file_if_exists("boot.py");    
-    //pyexec_file_if_exists("system.py");
     int ret = pyexec_file_if_exists("main.py");
     if (ret & PYEXEC_FORCED_EXIT) {
         printf("soft_reset_exit\r\n");
@@ -211,7 +213,6 @@ soft_reset:
         if (nlr_push(&nlr) == 0) {
             // Enable IDE interrupt
             usbdbg_set_irq_enabled(true);
-
             // Execute the script.
             ESP_LOGI("mp_task", "Execute the script");
             pyexec_str(usbdbg_get_script());
@@ -242,30 +243,16 @@ soft_reset_exit:
     gc_sweep_all();
     mp_hal_stdout_tx_str("MPY: soft reboot\r\n");
     esp32_sensor_deinit();
-    // esp_camera_deinit();
     // vTaskDelay(200);
     // deinitialise peripherals
     machine_pins_deinit();
     machine_deinit();
     usocket_events_deinit();
-
     mp_deinit();
     fflush(stdout);
     goto soft_reset;
 }
 
-void get_cmd_data()
-{
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    uart1_init();
-    while (1)
-    {
-        
-        uart1_read_data();
-        
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
-}
 
 void app_main(void) {
     esp_err_t ret = nvs_flash_init();
@@ -274,7 +261,6 @@ void app_main(void) {
         nvs_flash_init();
     }
     xTaskCreatePinnedToCore(mp_task, "mp_task", MP_TASK_STACK_SIZE / sizeof(StackType_t), NULL, MP_TASK_PRIORITY, &mp_main_task_handle, MP_TASK_COREID);
-    xTaskCreatePinnedToCore(get_cmd_data, "get_cmd_data", 4 * 1024, NULL, MP_TASK_PRIORITY, &mp_main_task_handle, MP_TASK_COREID);
 }
 
 void nlr_jump_fail(void *val) {

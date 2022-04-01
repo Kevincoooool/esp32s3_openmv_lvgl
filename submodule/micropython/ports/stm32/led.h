@@ -31,13 +31,6 @@ typedef enum {
     PYB_LED_GREEN = 2,
     PYB_LED_YELLOW = 3,
     PYB_LED_BLUE = 4,
-    //OpenMV
-    LED_RED=1,
-    LED_GREEN=2,
-    LED_BLUE=3,
-#if defined(MICROPY_HW_LED4)
-    LED_IR=4,
-#endif
 } pyb_led_t;
 
 void led_init(void);

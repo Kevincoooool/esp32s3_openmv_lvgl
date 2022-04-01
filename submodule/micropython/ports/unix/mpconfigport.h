@@ -86,7 +86,6 @@
 #define MICROPY_OPT_MAP_LOOKUP_CACHE (1)
 #endif
 #define MICROPY_MODULE_WEAK_LINKS   (1)
-#define MICROPY_MODULE_OVERRIDE_MAIN_IMPORT (1)
 #define MICROPY_CAN_OVERRIDE_BUILTINS (1)
 #define MICROPY_VFS_POSIX_FILE      (1)
 #define MICROPY_PY_FUNCTION_ATTRS   (1)
@@ -110,7 +109,6 @@
 #define MICROPY_PY_ARRAY_SLICE_ASSIGN (1)
 #define MICROPY_PY_BUILTINS_SLICE_ATTRS (1)
 #define MICROPY_PY_BUILTINS_SLICE_INDICES (1)
-#define MICROPY_PY_SYS_PATH_ARGV_DEFAULTS (0)
 #define MICROPY_PY_SYS_EXIT         (1)
 #define MICROPY_PY_SYS_ATEXIT       (1)
 #if MICROPY_PY_SYS_SETTRACE
@@ -123,9 +121,6 @@
 #else
     #define MICROPY_PY_SYS_PLATFORM  "linux"
 #endif
-#endif
-#ifndef MICROPY_PY_SYS_PATH_DEFAULT
-#define MICROPY_PY_SYS_PATH_DEFAULT ".frozen:~/.micropython/lib:/usr/lib/micropython"
 #endif
 #define MICROPY_PY_SYS_MAXSIZE      (1)
 #define MICROPY_PY_SYS_STDFILES     (1)

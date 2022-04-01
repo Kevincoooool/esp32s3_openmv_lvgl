@@ -34,7 +34,7 @@
 #include <net/net_context.h>
 #endif
 
-#ifdef CONFIG_USB_DEVICE_STACK
+#ifdef CONFIG_USB
 #include <usb/usb_device.h>
 #endif
 
@@ -139,8 +139,11 @@ soft_reset:
     gc_init(heap, heap + sizeof(heap));
     #endif
     mp_init();
+    mp_obj_list_init(mp_sys_path, 0);
+    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_)); // current dir (or base dir of the script)
+    mp_obj_list_init(mp_sys_argv, 0);
 
-    #ifdef CONFIG_USB_DEVICE_STACK
+    #ifdef CONFIG_USB
     usb_enable(NULL);
     #endif
 

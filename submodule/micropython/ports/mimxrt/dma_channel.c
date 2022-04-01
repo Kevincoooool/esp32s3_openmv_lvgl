@@ -27,17 +27,10 @@
 #include "dma_channel.h"
 
 // List of channel flags: true: channel used, false: channel available
-static bool channel_list[FSL_FEATURE_DMAMUX_MODULE_CHANNEL] = {
-    true, true, true, true, false, false, false, false,
-    false, false, false, false, false, false, false, false,
-
-    #if FSL_FEATURE_DMAMUX_MODULE_CHANNEL > 16
-
-    false, false, false, false, false, false, false, false,
-    false, false, false, false, false, false, false, false
-
-    #endif
-};
+static bool channel_list[32] = { true, true, true, true, false, false, false, false,
+                                 false, false, false, false, false, false, false, false,
+                                 false, false, false, false, false, false, false, false,
+                                 false, false, false, false, false, false, false, false };
 
 // allocate_channel(): retrieve an available channel. Return the number or -1
 int allocate_dma_channel(void) {

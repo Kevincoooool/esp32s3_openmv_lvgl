@@ -42,10 +42,6 @@
 
 #define ENABLE_SDIO (MICROPY_HW_ENABLE_SDCARD || MICROPY_HW_ENABLE_MMCARD || MICROPY_PY_NETWORK_CYW43)
 
-// If the CYW43 driver is enabled then SDIO DMA can happen preemptively (on an
-// IRQ) and so the SDIO needs exclusive access to its DMA resource.
-#define SDIO_NEEDS_EXCLUSIVE_DMA_ACCESS (MICROPY_PY_NETWORK_CYW43 && MICROPY_HW_SDIO_SDMMC == 1)
-
 typedef enum {
     dma_id_not_defined=-1,
     dma_id_0,
@@ -162,7 +158,7 @@ static const DMA_InitTypeDef dma_init_struct_sdio = {
 
 #if defined(MICROPY_HW_ENABLE_DAC) && MICROPY_HW_ENABLE_DAC
 // Default parameters to dma_init() for DAC tx
-DMA_InitTypeDef dma_init_struct_dac = {
+static const DMA_InitTypeDef dma_init_struct_dac = {
     #if defined(STM32F4) || defined(STM32F7)
     .Channel = 0,
     #elif defined(STM32H7) || defined(STM32L0) || defined(STM32L4) || defined(STM32WB)
@@ -302,13 +298,11 @@ const dma_descr_t dma_SPI_1_RX = { DMA2_Stream2, DMA_CHANNEL_3, dma_id_10,  &dma
 #if MICROPY_HW_ENABLE_I2S
 const dma_descr_t dma_I2S_1_RX = { DMA2_Stream2, DMA_CHANNEL_3, dma_id_10,  &dma_init_struct_i2s };
 #endif
+const dma_descr_t dma_SPI_5_RX = { DMA2_Stream3, DMA_CHANNEL_2, dma_id_11,  &dma_init_struct_spi_i2c };
 #if ENABLE_SDIO
 const dma_descr_t dma_SDIO_0 = { DMA2_Stream3, DMA_CHANNEL_4, dma_id_11,  &dma_init_struct_sdio };
 #endif
-#if !SDIO_NEEDS_EXCLUSIVE_DMA_ACCESS
-const dma_descr_t dma_SPI_5_RX = { DMA2_Stream3, DMA_CHANNEL_2, dma_id_11,  &dma_init_struct_spi_i2c };
 const dma_descr_t dma_SPI_4_RX = { DMA2_Stream3, DMA_CHANNEL_5, dma_id_11,  &dma_init_struct_spi_i2c };
-#endif
 const dma_descr_t dma_SPI_5_TX = { DMA2_Stream4, DMA_CHANNEL_2, dma_id_12,  &dma_init_struct_spi_i2c };
 const dma_descr_t dma_SPI_4_TX = { DMA2_Stream4, DMA_CHANNEL_5, dma_id_12,  &dma_init_struct_spi_i2c };
 const dma_descr_t dma_SPI_6_TX = { DMA2_Stream5, DMA_CHANNEL_1, dma_id_13,  &dma_init_struct_spi_i2c };
@@ -519,9 +513,7 @@ static const uint8_t dma_irqn[NSTREAM] = {
 // around each transfer.
 
 // DMA1 streams
-#ifndef MICROPY_HW_DMA1S0_IS_RESERVED
 const dma_descr_t dma_I2C_1_RX = { DMA1_Stream0, DMA_REQUEST_I2C1_RX, dma_id_0,   &dma_init_struct_spi_i2c };
-#endif
 const dma_descr_t dma_SPI_3_RX = { DMA1_Stream2, DMA_REQUEST_SPI3_RX, dma_id_2,   &dma_init_struct_spi_i2c };
 const dma_descr_t dma_I2C_4_RX = { DMA1_Stream2, BDMA_REQUEST_I2C4_RX, dma_id_2,   &dma_init_struct_spi_i2c };
 const dma_descr_t dma_I2C_3_RX = { DMA1_Stream2, DMA_REQUEST_I2C3_RX, dma_id_2,   &dma_init_struct_spi_i2c };
@@ -630,7 +622,7 @@ void DMA1_Ch4_7_DMA2_Ch3_5_IRQHandler(void) {
 }
 
 #elif defined(STM32F4) || defined(STM32F7) || defined(STM32H7)
-#ifndef MICROPY_HW_DMA1S0_IS_RESERVED
+
 void DMA1_Stream0_IRQHandler(void) {
     IRQ_ENTER(DMA1_Stream0_IRQn);
     if (dma_handle[dma_id_0] != NULL) {
@@ -638,8 +630,6 @@ void DMA1_Stream0_IRQHandler(void) {
     }
     IRQ_EXIT(DMA1_Stream0_IRQn);
 }
-#endif
-#ifndef MICROPY_HW_DMA1S1_IS_RESERVED
 void DMA1_Stream1_IRQHandler(void) {
     IRQ_ENTER(DMA1_Stream1_IRQn);
     if (dma_handle[dma_id_1] != NULL) {
@@ -647,7 +637,6 @@ void DMA1_Stream1_IRQHandler(void) {
     }
     IRQ_EXIT(DMA1_Stream1_IRQn);
 }
-#endif
 void DMA1_Stream2_IRQHandler(void) {
     IRQ_ENTER(DMA1_Stream2_IRQn);
     if (dma_handle[dma_id_2] != NULL) {
@@ -697,7 +686,6 @@ void DMA2_Stream0_IRQHandler(void) {
     }
     IRQ_EXIT(DMA2_Stream0_IRQn);
 }
-#ifndef MICROPY_HW_DMA2S1_IS_RESERVED
 void DMA2_Stream1_IRQHandler(void) {
     IRQ_ENTER(DMA2_Stream1_IRQn);
     if (dma_handle[dma_id_9] != NULL) {
@@ -705,7 +693,6 @@ void DMA2_Stream1_IRQHandler(void) {
     }
     IRQ_EXIT(DMA2_Stream1_IRQn);
 }
-#endif
 void DMA2_Stream2_IRQHandler(void) {
     IRQ_ENTER(DMA2_Stream2_IRQn);
     if (dma_handle[dma_id_10] != NULL) {
@@ -890,11 +877,12 @@ void DMA2_Channel7_IRQHandler(void) {
 
 #endif
 
-void dma_idle_handler(uint32_t tick);
+static void dma_idle_handler(uint32_t tick);
 
 // Resets the idle counter for the DMA controller associated with dma_id.
 static void dma_tickle(dma_id_t dma_id) {
     dma_idle.counter[(dma_id < NSTREAMS_PER_CONTROLLER) ? 0 : 1] = 1;
+    systick_enable_dispatch(SYSTICK_DISPATCH_DMA, dma_idle_handler);
 }
 
 static void dma_enable_clock(dma_id_t dma_id) {
@@ -1032,7 +1020,6 @@ void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t *dma_descr, uint32_t dir
 
 void dma_deinit(const dma_descr_t *dma_descr) {
     if (dma_descr != NULL) {
-        HAL_DMA_Abort(dma_handle[dma_descr->id]);
         #if !defined(STM32F0)
         HAL_NVIC_DisableIRQ(dma_irqn[dma_descr->id]);
         #endif
@@ -1054,7 +1041,7 @@ void dma_invalidate_channel(const dma_descr_t *dma_descr) {
 
 // Called from the SysTick handler
 // We use LSB of tick to select which controller to process
-void dma_idle_handler(uint32_t tick) {
+static void dma_idle_handler(uint32_t tick) {
     if (!DMA_IDLE_ENABLED() || !DMA_IDLE_TICK(tick)) {
         return;
     }

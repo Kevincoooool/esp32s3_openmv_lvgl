@@ -73,7 +73,7 @@ Reset related functions
 
 .. function:: hard_reset()
 
-   Resets the OpenMV Cam in a manner similar to pushing the external RESET
+   Resets the pyboard in a manner similar to pushing the external RESET
    button.
 
 .. function:: bootloader()
@@ -114,6 +114,44 @@ Interrupt related functions
 Power related functions
 -----------------------
 
+.. function:: freq([sysclk[, hclk[, pclk1[, pclk2]]]])
+
+   If given no arguments, returns a tuple of clock frequencies:
+   (sysclk, hclk, pclk1, pclk2).
+   These correspond to:
+
+    - sysclk: frequency of the CPU
+    - hclk: frequency of the AHB bus, core memory and DMA
+    - pclk1: frequency of the APB1 bus
+    - pclk2: frequency of the APB2 bus
+
+   If given any arguments then the function sets the frequency of the CPU,
+   and the buses if additional arguments are given.  Frequencies are given in
+   Hz.  Eg freq(120000000) sets sysclk (the CPU frequency) to 120MHz.  Note that
+   not all values are supported and the largest supported frequency not greater
+   than the given value will be selected.
+
+   Supported sysclk frequencies are (in MHz): 8, 16, 24, 30, 32, 36, 40, 42, 48,
+   54, 56, 60, 64, 72, 84, 96, 108, 120, 144, 168.
+
+   The maximum frequency of hclk is 168MHz, of pclk1 is 42MHz, and of pclk2 is
+   84MHz.  Be sure not to set frequencies above these values.
+
+   The hclk, pclk1 and pclk2 frequencies are derived from the sysclk frequency
+   using a prescaler (divider).  Supported prescalers for hclk are: 1, 2, 4, 8,
+   16, 64, 128, 256, 512.  Supported prescalers for pclk1 and pclk2 are: 1, 2,
+   4, 8.  A prescaler will be chosen to best match the requested frequency.
+
+   A sysclk frequency of
+   8MHz uses the HSE (external crystal) directly and 16MHz uses the HSI
+   (internal oscillator) directly.  The higher frequencies use the HSE to
+   drive the PLL (phase locked loop), and then use the output of the PLL.
+
+   Note that if you change the frequency while the USB is enabled then
+   the USB may become unreliable.  It is best to change the frequency
+   in boot.py, before the USB peripheral is started.  Also note that sysclk
+   frequencies below 36MHz do not allow the USB to function correctly.
+
 .. function:: wfi()
 
    Wait for an internal or external interrupt.
@@ -126,7 +164,7 @@ Power related functions
 
 .. function:: stop()
 
-   Put the OpenMV Cam in a "sleeping" state.
+   Put the pyboard in a "sleeping" state.
 
    This reduces power consumption to less than 500 uA.  To wake from this
    sleep state requires an external interrupt or a real-time-clock event.
@@ -136,10 +174,11 @@ Power related functions
 
 .. function:: standby()
 
-   Put the OpenMV Cam into a "deep sleep" state.
+   Put the pyboard into a "deep sleep" state.
 
    This reduces power consumption to less than 50 uA.  To wake from this
-   sleep state requires a real-time-clock event.
+   sleep state requires a real-time-clock event, or an external interrupt
+   on X1 (PA0=WKUP) or X18 (PC13=TAMP1).
    Upon waking the system undergoes a hard reset.
 
    See :meth:`rtc.wakeup` to configure a real-time-clock wakeup event.
@@ -265,17 +304,20 @@ Classes
 .. toctree::
    :maxdepth: 1
 
+   pyb.Accel.rst
    pyb.ADC.rst
    pyb.CAN.rst
    pyb.DAC.rst
    pyb.ExtInt.rst
    pyb.Flash.rst
    pyb.I2C.rst
+   pyb.LCD.rst
    pyb.LED.rst
    pyb.Pin.rst
    pyb.RTC.rst
    pyb.Servo.rst
    pyb.SPI.rst
+   pyb.Switch.rst
    pyb.Timer.rst
    pyb.UART.rst
    pyb.USB_HID.rst

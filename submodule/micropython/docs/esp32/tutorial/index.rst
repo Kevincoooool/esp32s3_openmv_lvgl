@@ -20,4 +20,3 @@ to `<https://www.python.org>`__.
 
    intro.rst
    pwm.rst
-   peripheral_access.rst

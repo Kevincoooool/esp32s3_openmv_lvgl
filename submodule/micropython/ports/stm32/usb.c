@@ -363,21 +363,6 @@ void usb_vcp_send_strn(const char *str, int len) {
     }
 }
 
-uint32_t usb_cdc_buf_len()
-{
-    return usbd_cdc_buf_len(&usb_device.usbd_cdc_itf[0]);
-}
-
-uint32_t usb_cdc_get_buf(uint8_t *buf, uint32_t len)
-{
-    return usbd_cdc_get_buf(&usb_device.usbd_cdc_itf[0], buf, len);
-}
-
-int usb_cdc_debug_mode_enabled()
-{
-    return usbd_cdc_debug_mode_enabled(&usb_device.usbd_cdc_itf[0]);
-}
-
 usbd_cdc_itf_t *usb_vcp_get(int idx) {
     return &usb_device.usbd_cdc_itf[idx];
 }
@@ -410,35 +395,6 @@ usbd_cdc_itf_t *usb_vcp_get(int idx) {
     pyb.usb_mode('OTG', ...)
     pyb.usb_mode(..., port=2) # for second USB port
 */
-
-typedef struct _pyb_usb_mode_table_t {
-    uint8_t usbd_mode;
-    uint16_t qst;
-    const char *deprecated_str;
-    uint16_t default_pid;
-} pyb_usb_mode_table_t;
-
-// These are all the modes supported by USBD_SelectMode.
-// Note: there are some names (eg CDC, VCP+VCP) which are supported for backwards compatibility.
-STATIC const pyb_usb_mode_table_t pyb_usb_mode_table[] = {
-    { USBD_MODE_CDC, MP_QSTR_VCP, "CDC", MICROPY_HW_USB_PID_CDC },
-    { USBD_MODE_MSC, MP_QSTR_MSC, NULL, MICROPY_HW_USB_PID_MSC },
-    { USBD_MODE_CDC_MSC, MP_QSTR_VCP_plus_MSC, "CDC+MSC", MICROPY_HW_USB_PID_CDC_MSC },
-    { USBD_MODE_CDC_HID, MP_QSTR_VCP_plus_HID, "CDC+HID", MICROPY_HW_USB_PID_CDC_HID },
-    { USBD_MODE_CDC_MSC_HID, MP_QSTR_VCP_plus_MSC_plus_HID, NULL, MICROPY_HW_USB_PID_CDC_MSC_HID },
-
-    #if MICROPY_HW_USB_CDC_NUM >= 2
-    { USBD_MODE_CDC2, MP_QSTR_2xVCP, "VCP+VCP", MICROPY_HW_USB_PID_CDC2 },
-    { USBD_MODE_CDC2_MSC, MP_QSTR_2xVCP_plus_MSC, "VCP+VCP+MSC", MICROPY_HW_USB_PID_CDC2_MSC },
-    { USBD_MODE_CDC2_MSC_HID, MP_QSTR_2xVCP_plus_MSC_plus_HID, NULL, MICROPY_HW_USB_PID_CDC2_MSC_HID },
-    #endif
-
-    #if MICROPY_HW_USB_CDC_NUM >= 3
-    { USBD_MODE_CDC3, MP_QSTR_3xVCP, NULL, MICROPY_HW_USB_PID_CDC3 },
-    { USBD_MODE_CDC3_MSC, MP_QSTR_3xVCP_plus_MSC, NULL, MICROPY_HW_USB_PID_CDC3_MSC },
-    { USBD_MODE_CDC3_MSC_HID, MP_QSTR_3xVCP_plus_MSC_plus_HID, NULL, MICROPY_HW_USB_PID_CDC3_MSC_HID },
-    #endif
-};
 
 STATIC mp_obj_t pyb_usb_mode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum {
@@ -474,14 +430,23 @@ STATIC mp_obj_t pyb_usb_mode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
         #if defined(USE_HOST_MODE)
         return MP_OBJ_NEW_QSTR(MP_QSTR_host);
         #else
-        uint8_t mode = USBD_GetMode(&usb_device.usbd_cdc_msc_hid_state) & USBD_MODE_IFACE_MASK;
-        for (size_t i = 0; i < MP_ARRAY_SIZE(pyb_usb_mode_table); ++i) {
-            const pyb_usb_mode_table_t *m = &pyb_usb_mode_table[i];
-            if (mode == m->usbd_mode) {
-                return MP_OBJ_NEW_QSTR(m->qst);
-            }
+        uint8_t mode = USBD_GetMode(&usb_device.usbd_cdc_msc_hid_state);
+        switch (mode & USBD_MODE_IFACE_MASK) {
+            case USBD_MODE_CDC:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_VCP);
+            case USBD_MODE_MSC:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_MSC);
+            case USBD_MODE_HID:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_HID);
+            case USBD_MODE_CDC_MSC:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_VCP_plus_MSC);
+            case USBD_MODE_CDC_HID:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_VCP_plus_HID);
+            case USBD_MODE_MSC_HID:
+                return MP_OBJ_NEW_QSTR(MP_QSTR_MSC_plus_HID);
+            default:
+                return mp_const_none;
         }
-        return mp_const_none;
         #endif
     }
 
@@ -518,21 +483,70 @@ STATIC mp_obj_t pyb_usb_mode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 
     // get the VID, PID and USB mode
     // note: PID=-1 means select PID based on mode
+    // note: we support CDC as a synonym for VCP for backward compatibility
     uint16_t vid = args[ARG_vid].u_int;
     mp_int_t pid = args[ARG_pid].u_int;
-    uint8_t mode = 0;
-    for (size_t i = 0; i < MP_ARRAY_SIZE(pyb_usb_mode_table); ++i) {
-        const pyb_usb_mode_table_t *m = &pyb_usb_mode_table[i];
-        if (strcmp(mode_str, qstr_str(m->qst)) == 0
-            || (m->deprecated_str != NULL && strcmp(mode_str, m->deprecated_str) == 0)) {
-            if (pid == -1) {
-                pid = m->default_pid;
-            }
-            mode = m->usbd_mode;
-            break;
+    uint8_t mode;
+    if (strcmp(mode_str, "CDC+MSC") == 0 || strcmp(mode_str, "VCP+MSC") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC_MSC;
         }
-    }
-    if (mode == 0) {
+        mode = USBD_MODE_CDC_MSC;
+    } else if (strcmp(mode_str, "VCP+MSC+HID") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC_MSC_HID;
+        }
+        mode = USBD_MODE_CDC_MSC_HID;
+    #if MICROPY_HW_USB_CDC_NUM >= 2
+    } else if (strcmp(mode_str, "VCP+VCP") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC2;
+        }
+        mode = USBD_MODE_CDC2;
+    } else if (strcmp(mode_str, "VCP+VCP+MSC") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC2_MSC;
+        }
+        mode = USBD_MODE_CDC2_MSC;
+    } else if (strcmp(mode_str, "2xVCP+MSC+HID") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC2_MSC_HID;
+        }
+        mode = USBD_MODE_CDC2_MSC_HID;
+    #endif
+    #if MICROPY_HW_USB_CDC_NUM >= 3
+    } else if (strcmp(mode_str, "3xVCP") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC3;
+        }
+        mode = USBD_MODE_CDC3;
+    } else if (strcmp(mode_str, "3xVCP+MSC") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC3_MSC;
+        }
+        mode = USBD_MODE_CDC3_MSC;
+    } else if (strcmp(mode_str, "3xVCP+MSC+HID") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC3_MSC_HID;
+        }
+        mode = USBD_MODE_CDC3_MSC_HID;
+    #endif
+    } else if (strcmp(mode_str, "CDC+HID") == 0 || strcmp(mode_str, "VCP+HID") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC_HID;
+        }
+        mode = USBD_MODE_CDC_HID;
+    } else if (strcmp(mode_str, "CDC") == 0 || strcmp(mode_str, "VCP") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_CDC;
+        }
+        mode = USBD_MODE_CDC;
+    } else if (strcmp(mode_str, "MSC") == 0) {
+        if (pid == -1) {
+            pid = MICROPY_HW_USB_PID_MSC;
+        }
+        mode = USBD_MODE_MSC;
+    } else {
         goto bad_mode;
     }
 
@@ -733,12 +747,6 @@ STATIC mp_obj_t pyb_usb_vcp_isconnected(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_usb_vcp_isconnected_obj, pyb_usb_vcp_isconnected);
 
-STATIC mp_obj_t pyb_usb_vcp_debug_mode_enabled(mp_obj_t self_in) {
-    pyb_usb_vcp_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    return mp_obj_new_bool(usbd_cdc_debug_mode_enabled(self->cdc_itf));
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_usb_vcp_debug_mode_enabled_obj, pyb_usb_vcp_debug_mode_enabled);
-
 // deprecated in favour of USB_VCP.isconnected
 STATIC mp_obj_t pyb_have_cdc(void) {
     return pyb_usb_vcp_isconnected(MP_OBJ_FROM_PTR(&pyb_usb_vcp_obj[0]));
@@ -870,7 +878,6 @@ STATIC const mp_rom_map_elem_t pyb_usb_vcp_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&pyb_usb_vcp_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_setinterrupt), MP_ROM_PTR(&pyb_usb_vcp_setinterrupt_obj) },
     { MP_ROM_QSTR(MP_QSTR_isconnected), MP_ROM_PTR(&pyb_usb_vcp_isconnected_obj) },
-    { MP_ROM_QSTR(MP_QSTR_debug_mode_enabled), MP_ROM_PTR(&pyb_usb_vcp_debug_mode_enabled_obj) },
     { MP_ROM_QSTR(MP_QSTR_any), MP_ROM_PTR(&pyb_usb_vcp_any_obj) },
     { MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&pyb_usb_vcp_send_obj) },
     { MP_ROM_QSTR(MP_QSTR_recv), MP_ROM_PTR(&pyb_usb_vcp_recv_obj) },

@@ -26,7 +26,6 @@
 #include "host/ble_uuid.h"
 #include "ble_hs_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 void *
 ble_att_cmd_prepare(uint8_t opcode, size_t len, struct os_mbuf *txom)
 {
@@ -67,10 +66,11 @@ ble_att_tx(uint16_t conn_handle, struct os_mbuf *txom)
 
     ble_hs_lock();
 
-    rc = ble_hs_misc_conn_chan_find_reqd(conn_handle, BLE_L2CAP_CID_ATT, &conn,
-                                         &chan);
-    if (rc != 0) {
+    ble_hs_misc_conn_chan_find_reqd(conn_handle, BLE_L2CAP_CID_ATT, &conn,
+                                    &chan);
+    if (chan == NULL) {
         os_mbuf_free_chain(txom);
+        rc = BLE_HS_ENOTCONN;
     } else {
         ble_att_truncate_to_mtu(chan, txom);
         rc = ble_l2cap_tx(conn, chan, txom);
@@ -635,5 +635,3 @@ ble_att_indicate_rsp_write(void *payload, int len)
     ble_att_init_write(BLE_ATT_OP_INDICATE_RSP, payload,
                        BLE_ATT_INDICATE_RSP_SZ, len);
 }
-
-#endif

@@ -43,7 +43,7 @@ clean:
 	idf.py $(IDFPY_FLAGS) fullclean
 
 deploy:
-	# idf.py $(IDFPY_FLAGS) menuconfig
+	idf.py $(IDFPY_FLAGS) menuconfig
 	idf.py $(IDFPY_FLAGS) -p $(PORT) -b $(BAUD) flash monitor
 flash:
 	# idf.py $(IDFPY_FLAGS) menuconfig

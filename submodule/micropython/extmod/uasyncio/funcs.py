@@ -66,7 +66,7 @@ async def gather(*aws, return_exceptions=False):
             #        # cancel all waiting tasks
             #        raise er
             ts[i] = await ts[i]
-        except (core.CancelledError, Exception) as er:
+        except Exception as er:
             if return_exceptions:
                 ts[i] = er
             else:

@@ -7,8 +7,6 @@
 #ifndef _PICO_UNIQUE_ID_H_
 #define _PICO_UNIQUE_ID_H_
 
-#include "pico.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

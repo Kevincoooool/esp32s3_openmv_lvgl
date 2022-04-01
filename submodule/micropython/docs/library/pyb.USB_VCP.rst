@@ -4,7 +4,7 @@
 class USB_VCP -- USB virtual comm port
 ======================================
 
-The USB_VCP class allows creation of a :std:term:`stream`-like object representing the USB
+The USB_VCP class allows creation of a `stream`-like object representing the USB
 virtual comm port.  It can be used to read and write data over USB to
 the connected host.
 
@@ -12,9 +12,11 @@ the connected host.
 Constructors
 ------------
 
-.. class:: pyb.USB_VCP()
+.. class:: pyb.USB_VCP(id=0)
 
-   Create a new USB_VCP object.
+   Create a new USB_VCP object.  The *id* argument specifies which USB VCP port to
+   use.
+
 
 Methods
 -------
@@ -38,10 +40,6 @@ Methods
 
    Return ``True`` if USB is connected as a serial device, else ``False``.
 
-.. method:: USB_VCP.debug_mode_enabled()
-
-   Return ``True`` if OpenMV IDE is connected to the OpenMV Cam.
-
 .. method:: USB_VCP.any()
 
    Return ``True`` if any characters waiting, else ``False``.
@@ -56,7 +54,7 @@ Methods
    Read at most ``nbytes`` from the serial device and return them as a
    bytes object.  If ``nbytes`` is not specified then the method reads
    all available bytes from the serial device.
-   USB_VCP :std:term:`stream` implicitly works in non-blocking mode,
+   USB_VCP `stream` implicitly works in non-blocking mode,
    so if no pending data available, this method will return immediately
    with ``None`` value.
 

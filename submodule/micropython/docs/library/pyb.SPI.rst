@@ -11,7 +11,7 @@ See usage model of I2C; SPI is very similar.  Main difference is
 parameters to init the SPI bus::
 
     from pyb import SPI
-    spi = SPI(2, SPI.MASTER, baudrate=600000, polarity=1, phase=0, crc=0x7)
+    spi = SPI(1, SPI.CONTROLLER, baudrate=600000, polarity=1, phase=0, crc=0x7)
 
 Only required parameter is mode, SPI.CONTROLLER or SPI.PERIPHERAL.  Polarity can be
 0 or 1, and is the level the idle clock line sits at.  Phase can be 0 or 1
@@ -30,15 +30,16 @@ Constructors
 
 .. class:: pyb.SPI(bus, ...)
 
-   Construct an SPI object on the given bus.  ``bus`` can be 2.
-   With no additional parameters, the SPI object is created but
+   Construct an SPI object on the given bus.  ``bus`` can be 1 or 2, or
+   'X' or 'Y'. With no additional parameters, the SPI object is created but
    not initialised (it has the settings from the last initialisation of
    the bus, if any).  If extra arguments are given, the bus is initialised.
    See ``init`` for parameters of initialisation.
 
    The physical pins of the SPI buses are:
 
-     - ``SPI(2)``: ``(NSS, SCK, MISO, MOSI) = (P3, P2, P1, P0) = (PB12, PB13, PB14, PB15)``
+     - ``SPI(1)`` is on the X position: ``(NSS, SCK, MISO, MOSI) = (X5, X6, X7, X8) = (PA4, PA5, PA6, PA7)``
+     - ``SPI(2)`` is on the Y position: ``(NSS, SCK, MISO, MOSI) = (Y5, Y6, Y7, Y8) = (PB12, PB13, PB14, PB15)``
 
    At the moment, the NSS pin is not used by the SPI driver and is free
    for other use.
@@ -68,8 +69,8 @@ Methods
 
    Note that the SPI clock frequency will not always be the requested baudrate.
    The hardware only supports baudrates that are the APB bus frequency
-   divided by a prescaler, which can be 2, 4, 8, 16, 32,
-   64, 128 or 256.  SPI(2) is on AHB1.  For precise
+   (see :meth:`pyb.freq`) divided by a prescaler, which can be 2, 4, 8, 16, 32,
+   64, 128 or 256.  SPI(1) is on AHB2, and SPI(2) is on AHB1.  For precise
    control over the SPI clock frequency, specify ``prescaler`` instead of
    ``baudrate``.
 

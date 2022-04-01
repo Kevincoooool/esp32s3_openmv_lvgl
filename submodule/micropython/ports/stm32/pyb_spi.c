@@ -131,7 +131,7 @@ STATIC mp_obj_t pyb_spi_init_helper(const pyb_spi_obj_t *self, size_t n_args, co
 //
 // At the moment, the NSS pin is not used by the SPI driver and is free
 // for other use.
-mp_obj_t pyb_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t pyb_spi_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     // check arguments
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
@@ -158,7 +158,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_init_obj, 1, pyb_spi_init);
 
 // deinit()
 // Turn off the SPI bus.
-mp_obj_t pyb_spi_deinit(mp_obj_t self_in) {
+STATIC mp_obj_t pyb_spi_deinit(mp_obj_t self_in) {
     pyb_spi_obj_t *self = MP_OBJ_TO_PTR(self_in);
     spi_deinit(self->spi);
     return mp_const_none;
@@ -171,7 +171,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_spi_deinit_obj, pyb_spi_deinit);
 //   - `timeout` is the timeout in milliseconds to wait for the send.
 //
 // Return value: `None`.
-mp_obj_t pyb_spi_send(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t pyb_spi_send(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     // TODO assumes transmission size is 8-bits wide
 
     static const mp_arg_t allowed_args[] = {

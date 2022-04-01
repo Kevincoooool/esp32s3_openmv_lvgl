@@ -419,7 +419,7 @@ void stm32_main(uint32_t reset_mode) {
     #if MICROPY_PY_PYB_LEGACY && MICROPY_HW_ENABLE_HW_I2C
     i2c_init0();
     #endif
-    #if MICROPY_HW_ENABLE_SDCARD || MICROPY_HW_ENABLE_MMCARD
+    #if MICROPY_HW_ENABLE_SDCARD
     sdcard_init();
     #endif
     #if MICROPY_HW_ENABLE_STORAGE
@@ -494,6 +494,9 @@ soft_reset:
 
     // MicroPython init
     mp_init();
+    mp_obj_list_init(MP_OBJ_TO_PTR(mp_sys_path), 0);
+    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_)); // current dir (or base dir of the script)
+    mp_obj_list_init(MP_OBJ_TO_PTR(mp_sys_argv), 0);
 
     // Initialise low-level sub-systems.  Here we need to very basic things like
     // zeroing out memory and resetting any of the sub-systems.  Following this
@@ -560,11 +563,6 @@ soft_reset:
 
     // reset config variables; they should be set by boot.py
     MP_STATE_PORT(pyb_config_main) = MP_OBJ_NULL;
-
-    // Run optional frozen boot code.
-    #ifdef MICROPY_BOARD_FROZEN_BOOT_FILE
-    pyexec_frozen_module(MICROPY_BOARD_FROZEN_BOOT_FILE);
-    #endif
 
     // Run boot.py (or whatever else a board configures at this stage).
     if (MICROPY_BOARD_RUN_BOOT_PY(&state) == BOARDCTRL_GOTO_SOFT_RESET_EXIT) {

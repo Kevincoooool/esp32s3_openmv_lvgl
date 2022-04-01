@@ -8,7 +8,7 @@ import sys
 import csv
 import re
 
-SUPPORTED_AFS = {"GPIO", "USDHC", "FLEXPWM", "TMR"}
+SUPPORTED_AFS = {"GPIO", "USDHC"}
 MAX_AF = 10  # AF0 .. AF9
 ADC_COL = 11
 
@@ -180,12 +180,6 @@ class Pins(object):
         with open(filename, "r") as csvfile:
             rows = csv.reader(csvfile)
             for row in rows:
-                if len(row) == 0 or row[0].startswith("#"):
-                    # Skip empty lines, and lines starting with "#"
-                    continue
-                if len(row) != 2:
-                    raise ValueError("Expecting two entries in a row")
-
                 pin = self.find_pin_by_name(row[1])
                 if pin and row[0]:  # Only add board pins that have a name
                     self.board_pins.append(NamedPin(row[0], pin.pad, pin.idx))
@@ -282,33 +276,29 @@ class Pins(object):
             hdr_file.write("extern const mp_obj_dict_t machine_pin_board_pins_locals_dict;\n")
 
             hdr_file.write("\n// Defines\n")
-            module_instance_factory(self.cpu_pins, hdr_file, "USDHC")
-            module_instance_factory(self.cpu_pins, hdr_file, "FLEXPWM")
-            module_instance_factory(self.cpu_pins, hdr_file, "TMR")
+            usdhc_instance_factory(self.cpu_pins, hdr_file)
 
 
-def module_instance_factory(pins, output_file, name):
-    module_pin = filter(lambda p: any([af for af in p.alt_fn if name in af.af_str]), pins)
+def usdhc_instance_factory(pins, output_file):
+    usdhc_pins = filter(lambda p: any([af for af in p.alt_fn if "USDHC" in af.af_str]), pins)
 
-    module_instances = dict()
-    for pin in module_pin:
+    usdhc_instances = dict()
+    for pin in usdhc_pins:
         for idx, alt_fn in enumerate(pin.alt_fn):
-            if name in alt_fn.instance:
+            if "USDHC" in alt_fn.instance:
                 format_string = "#define {0}_{1} &pin_{0}, {2}"
-                if alt_fn.instance not in module_instances:
-                    module_instances[alt_fn.instance] = [
+                if alt_fn.instance not in usdhc_instances:
+                    usdhc_instances[alt_fn.instance] = [
                         format_string.format(pin.name, alt_fn.af_str, idx)
                     ]
                 else:
-                    module_instances[alt_fn.instance].append(
+                    usdhc_instances[alt_fn.instance].append(
                         format_string.format(pin.name, alt_fn.af_str, idx)
                     )
 
-    for k, v in module_instances.items():
+    for k, v in usdhc_instances.items():
         output_file.write(f"// {k}\n")
         output_file.write(f"#define {k}_AVAIL (1)\n")
-        if name == "FLEXPWM":
-            output_file.write(f"#define {k} {k[-4:]}\n")
         for i in v:
             output_file.write(i + "\n")
 
@@ -330,7 +320,7 @@ def main():
         "-i",
         "--iomux",
         dest="iomux_filename",
-        help="Specifies the fsl_iomuxc.h file for the chip",
+        help="Specifies the fsl_iomux.h file for the chip",
         default="fsl_iomuxc.h",
     )
     parser.add_argument(

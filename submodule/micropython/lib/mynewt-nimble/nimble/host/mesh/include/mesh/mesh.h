@@ -17,15 +17,10 @@
 #include "glue.h"
 #include "access.h"
 #include "main.h"
-#include "cfg.h"
 #include "cfg_srv.h"
 #include "health_srv.h"
 #include "cfg_cli.h"
 #include "health_cli.h"
 #include "proxy.h"
-#include "cdb.h"
-#include "cfg.h"
-#include "heartbeat.h"
-#include "../src/app_keys.h"
 
 #endif /* __BT_MESH_H */

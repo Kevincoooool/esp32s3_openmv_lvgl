@@ -83,15 +83,13 @@
 #include "i2c.h"
 #include "usb.h"
 
-extern void __fatal_error(const char*);
-extern void DCMI_VsyncExtiCallback();
+extern void __fatal_error(const char *);
 #if defined(MICROPY_HW_USB_FS)
 extern PCD_HandleTypeDef pcd_fs_handle;
 #endif
 #if defined(MICROPY_HW_USB_HS)
 extern PCD_HandleTypeDef pcd_hs_handle;
 #endif
-extern TIM_HandleTypeDef TIM5_Handle;
 
 /******************************************************************************/
 /*            Cortex-M4 Processor Exceptions Handlers                         */
@@ -397,9 +395,7 @@ void OTG_FS_WKUP_IRQHandler(void) {
 
     OTG_CMD_WKUP_Handler(&pcd_fs_handle);
 
-    #if defined(STM32L4)
-    EXTI->PR1 = USB_OTG_FS_WAKEUP_EXTI_LINE;
-    #elif !defined(STM32H7)
+    #if !defined(STM32H7)
     /* Clear EXTI pending Bit*/
     __HAL_USB_FS_EXTI_CLEAR_FLAG();
     #endif
@@ -478,7 +474,7 @@ void EXTI9_5_IRQHandler(void) {
     IRQ_ENTER(EXTI9_5_IRQn);
     Handle_EXTI_Irq(5);
     Handle_EXTI_Irq(6);
-    DCMI_VsyncExtiCallback();
+    Handle_EXTI_Irq(7);
     Handle_EXTI_Irq(8);
     Handle_EXTI_Irq(9);
     IRQ_EXIT(EXTI9_5_IRQn);
@@ -537,7 +533,6 @@ void RTC_WKUP_IRQHandler(void) {
     RTC->ISR &= ~RTC_ISR_WUTF; // clear wakeup interrupt flag
     #endif
     Handle_EXTI_Irq(EXTI_RTC_WAKEUP); // clear EXTI flag and execute optional callback
-    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG(); // Clear the EXTI's line Flag for RTC WakeUpTimer
     IRQ_EXIT(RTC_WKUP_IRQn);
 }
 
@@ -663,13 +658,13 @@ void TIM3_IRQHandler(void) {
 void TIM4_IRQHandler(void) {
     IRQ_ENTER(TIM4_IRQn);
     timer_irq_handler(4);
-    HAL_TIM_IRQHandler(&TIM4_Handle);
     IRQ_EXIT(TIM4_IRQn);
 }
 
 void TIM5_IRQHandler(void) {
     IRQ_ENTER(TIM5_IRQn);
     timer_irq_handler(5);
+    HAL_TIM_IRQHandler(&TIM5_Handle);
     IRQ_EXIT(TIM5_IRQn);
 }
 

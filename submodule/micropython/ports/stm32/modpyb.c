@@ -86,6 +86,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pyb_elapsed_micros_obj, pyb_elapsed_micros);
 
 #endif
 
+MP_DECLARE_CONST_FUN_OBJ_KW(pyb_main_obj); // defined in main.c
+
 // Get or set the UART object that the REPL is repeated on.
 // This is a legacy function, use of uos.dupterm is preferred.
 STATIC mp_obj_t pyb_repl_uart(size_t n_args, const mp_obj_t *args) {
@@ -155,6 +157,7 @@ STATIC const mp_rom_map_elem_t pyb_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&machine_lightsleep_obj) },
     { MP_ROM_QSTR(MP_QSTR_standby), MP_ROM_PTR(&machine_deepsleep_obj) },
     #endif
+    { MP_ROM_QSTR(MP_QSTR_main), MP_ROM_PTR(&pyb_main_obj) },
     { MP_ROM_QSTR(MP_QSTR_repl_uart), MP_ROM_PTR(&pyb_repl_uart_obj) },
     { MP_ROM_QSTR(MP_QSTR_country), MP_ROM_PTR(&pyb_country_obj) },
 

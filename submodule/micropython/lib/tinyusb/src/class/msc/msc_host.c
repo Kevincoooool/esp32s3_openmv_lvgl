@@ -29,8 +29,6 @@
 #if TUSB_OPT_HOST_ENABLED & CFG_TUH_MSC
 
 #include "host/usbh.h"
-#include "host/usbh_classdriver.h"
-
 #include "msc_host.h"
 
 //--------------------------------------------------------------------+
@@ -69,14 +67,13 @@ typedef struct
   msc_csw_t csw;
 }msch_interface_t;
 
-CFG_TUSB_MEM_SECTION static msch_interface_t _msch_itf[CFG_TUH_DEVICE_MAX];
+CFG_TUSB_MEM_SECTION static msch_interface_t _msch_itf[CFG_TUSB_HOST_DEVICE_MAX];
 
 // buffer used to read scsi information when mounted
 // largest response data currently is inquiry TODO Inquiry is not part of enum anymore
 CFG_TUSB_MEM_SECTION TU_ATTR_ALIGNED(4)
 static uint8_t _msch_buffer[sizeof(scsi_inquiry_resp_t)];
 
-TU_ATTR_ALWAYS_INLINE
 static inline msch_interface_t* get_itf(uint8_t dev_addr)
 {
   return &_msch_itf[dev_addr-1];
@@ -112,7 +109,7 @@ bool tuh_msc_mounted(uint8_t dev_addr)
 bool tuh_msc_ready(uint8_t dev_addr)
 {
   msch_interface_t* p_msc = get_itf(dev_addr);
-  return p_msc->mounted && !usbh_edpt_busy(dev_addr, p_msc->ep_in);
+  return p_msc->mounted && !hcd_edpt_busy(dev_addr, p_msc->ep_in);
 }
 
 //--------------------------------------------------------------------+
@@ -292,13 +289,11 @@ bool tuh_msc_reset(uint8_t dev_addr)
 //--------------------------------------------------------------------+
 void msch_init(void)
 {
-  tu_memclr(_msch_itf, sizeof(_msch_itf));
+  tu_memclr(_msch_itf, sizeof(msch_interface_t)*CFG_TUSB_HOST_DEVICE_MAX);
 }
 
 void msch_close(uint8_t dev_addr)
 {
-  TU_VERIFY(dev_addr <= CFG_TUH_DEVICE_MAX, );
-
   msch_interface_t* p_msc = get_itf(dev_addr);
 
   // invoke Application Callback
@@ -363,14 +358,10 @@ static bool config_test_unit_ready_complete(uint8_t dev_addr, msc_cbw_t const* c
 static bool config_request_sense_complete(uint8_t dev_addr, msc_cbw_t const* cbw, msc_csw_t const* csw);
 static bool config_read_capacity_complete(uint8_t dev_addr, msc_cbw_t const* cbw, msc_csw_t const* csw);
 
-bool msch_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *desc_itf, uint16_t max_len)
+bool msch_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *desc_itf, uint16_t *p_length)
 {
   TU_VERIFY (MSC_SUBCLASS_SCSI == desc_itf->bInterfaceSubClass &&
              MSC_PROTOCOL_BOT  == desc_itf->bInterfaceProtocol);
-
-  // msc driver length is fixed
-  uint16_t const drv_len = sizeof(tusb_desc_interface_t) + desc_itf->bNumEndpoints*sizeof(tusb_desc_endpoint_t);
-  TU_ASSERT(drv_len <= max_len);
 
   msch_interface_t* p_msc = get_itf(dev_addr);
   tusb_desc_endpoint_t const * ep_desc = (tusb_desc_endpoint_t const *) tu_desc_next(desc_itf);
@@ -392,6 +383,7 @@ bool msch_open(uint8_t rhport, uint8_t dev_addr, tusb_desc_interface_t const *de
   }
 
   p_msc->itf_num = desc_itf->bInterfaceNumber;
+  (*p_length) += sizeof(tusb_desc_interface_t) + 2*sizeof(tusb_desc_endpoint_t);
 
   return true;
 }

@@ -36,8 +36,8 @@
 #define HID_CLASS_DESC_SIZE (9 + 9 + 7 + 7)
 
 #define MSC_TEMPLATE_MSC_DESC_OFFSET (9)
-#define CDC_MSC_TEMPLATE_MSC_DESC_OFFSET (9 + 8 + 58)
-#define CDC_MSC_TEMPLATE_CDC_DESC_OFFSET (9)
+#define CDC_MSC_TEMPLATE_MSC_DESC_OFFSET (9)
+#define CDC_MSC_TEMPLATE_CDC_DESC_OFFSET (40)
 #define CDC2_TEMPLATE_CDC_DESC_OFFSET (9 + 8)
 #define CDC2_TEMPLATE_CDC2_DESC_OFFSET (9 + (8 + 58) + 8)
 #define CDC2_MSC_TEMPLATE_MSC_DESC_OFFSET (9)
@@ -52,11 +52,11 @@
 #define CDC3_MSC_TEMPLATE_CDC3_DESC_OFFSET (9 + 23 + (8 + 58) + (8 + 58) + 8)
 #define CDC_HID_TEMPLATE_CDC_DESC_OFFSET (49)
 #define CDC_TEMPLATE_CDC_DESC_OFFSET (9)
-#define CDC_DESC_OFFSET_INTR_INTERVAL (42)
-#define CDC_DESC_OFFSET_OUT_MAX_PACKET_LO (56)
-#define CDC_DESC_OFFSET_OUT_MAX_PACKET_HI (57)
-#define CDC_DESC_OFFSET_IN_MAX_PACKET_LO (63)
-#define CDC_DESC_OFFSET_IN_MAX_PACKET_HI (64)
+#define CDC_DESC_OFFSET_INTR_INTERVAL (34)
+#define CDC_DESC_OFFSET_OUT_MAX_PACKET_LO (48)
+#define CDC_DESC_OFFSET_OUT_MAX_PACKET_HI (49)
+#define CDC_DESC_OFFSET_IN_MAX_PACKET_LO (55)
+#define CDC_DESC_OFFSET_IN_MAX_PACKET_HI (56)
 #define HID_DESC_OFFSET_SUBCLASS (6)
 #define HID_DESC_OFFSET_PROTOCOL (7)
 #define HID_DESC_OFFSET_SUBDESC (9)
@@ -72,25 +72,25 @@
 #define HID_SUBDESC_LEN (9)
 
 #define CDC_IFACE_NUM_ALONE (0)
-#define CDC_IFACE_NUM_WITH_MSC (0)
+#define CDC_IFACE_NUM_WITH_MSC (1)
 #define CDC2_IFACE_NUM_WITH_CDC (2)
 #define CDC3_IFACE_NUM_WITH_CDC (4)
 #define CDC2_IFACE_NUM_WITH_MSC (3)
 #define CDC3_IFACE_NUM_WITH_MSC (5)
 #define CDC_IFACE_NUM_WITH_HID (1)
-#define MSC_IFACE_NUM_WITH_CDC (2)
+#define MSC_IFACE_NUM_WITH_CDC (0)
 #define HID_IFACE_NUM_WITH_CDC (0)
 #define HID_IFACE_NUM_WITH_MSC (1)
 #define HID_IFACE_NUM_WITH_CDC_MSC (3)
 #define HID_IFACE_NUM_WITH_CDC2_MSC (5)
 #define HID_IFACE_NUM_WITH_CDC3_MSC (7)
 
-#define CDC_IN_EP(i) (0x81 + 2 * (i))
-#define CDC_OUT_EP(i) (0x01 + 2 * (i))
+#define CDC_IN_EP(i) (0x83 + 2 * (i))
+#define CDC_OUT_EP(i) (0x03 + 2 * (i))
 #define CDC_CMD_EP(i) (0x82 + 2 * (i))
 
-#define HID_IN_EP_WITH_CDC (0x83)
-#define HID_OUT_EP_WITH_CDC (0x03)
+#define HID_IN_EP_WITH_CDC (0x81)
+#define HID_OUT_EP_WITH_CDC (0x01)
 #define HID_IN_EP_WITH_MSC (0x83)
 #define HID_OUT_EP_WITH_MSC (0x03)
 #define HID_IN_EP_WITH_CDC_MSC (0x84)
@@ -505,8 +505,8 @@ int USBD_SelectMode(usbd_cdc_msc_hid_state_t *usbd, uint32_t mode, USBD_HID_Mode
             break;
 
         case USBD_MODE_CDC_MSC:
-            n += make_cdc_desc(d + n, 1, CDC_IFACE_NUM_WITH_MSC);
             n += make_msc_desc(d + n);
+            n += make_cdc_desc(d + n, 1, CDC_IFACE_NUM_WITH_MSC);
             usbd->cdc[0]->iface_num = CDC_IFACE_NUM_WITH_MSC;
             num_itf = 3;
             break;
@@ -669,8 +669,6 @@ int USBD_SelectMode(usbd_cdc_msc_hid_state_t *usbd, uint32_t mode, USBD_HID_Mode
     return 0;
 }
 
-extern uint8_t _msc_buf;
-
 static void usbd_cdc_state_init(USBD_HandleTypeDef *pdev, usbd_cdc_msc_hid_state_t *usbd, usbd_cdc_state_t *cdc, uint8_t cmd_ep) {
     int mp = usbd_cdc_max_packet(pdev);
 
@@ -725,8 +723,6 @@ static uint8_t USBD_CDC_MSC_HID_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
                        MSC_IN_EP,
                        USBD_EP_TYPE_BULK,
                        mp);
-
-        usbd->MSC_BOT_ClassData.bot_data = &_msc_buf;
 
         // Init the BOT layer
         MSC_BOT_Init(pdev);

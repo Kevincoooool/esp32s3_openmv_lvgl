@@ -24,7 +24,6 @@
 #include "ble_hs_priv.h"
 #include "ble_sm_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 #if MYNEWT_VAL(BLE_SM_SC)
 
 #define BLE_SM_SC_PASSKEY_BYTES     4
@@ -908,4 +907,3 @@ ble_sm_sc_init(void)
 }
 
 #endif  /* MYNEWT_VAL(BLE_SM_SC) */
-#endif

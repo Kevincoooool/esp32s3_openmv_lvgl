@@ -39,25 +39,11 @@ typedef int32_t i32;
 #define FUNPACK(x,e,m) e=((x)>>23)&0xff,m=((x)&0x007fffff)|0x00800000
 #define FUNPACKS(x,s,e,m) s=((x)>>31),FUNPACK((x),(e),(m))
 
-typedef union {
-    float f;
-    ui32 ix;
-} float_ui32;
-
-static inline float ui322float(ui32 ix) {
-    float_ui32 tmp;
-    tmp.ix = ix;
-    return tmp.f;
-}
-
-static inline ui32 float2ui32(float f) {
-    float_ui32 tmp;
-    tmp.f = f;
-    return tmp.ix;
-}
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Wstrict-aliasing\"")
 
 static inline bool fisnan(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     return ix * 2 > 0xff000000u;
 }
 
@@ -70,17 +56,17 @@ static inline bool fisnan(float x) {
 #endif
 
 static inline int fgetsignexp(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     return (ix>>23)&0x1ff;
 }
 
 static inline int fgetexp(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     return (ix>>23)&0xff;
 }
 
 static inline float fldexp(float x,int de) {
-    ui32 ix=float2ui32(x),iy;
+    ui32 ix=*(ui32*)&x,iy;
     int e;
     e=fgetexp(x);
     if(e==0||e==0xff) return x;
@@ -88,7 +74,7 @@ static inline float fldexp(float x,int de) {
     if(e<=0) iy=ix&0x80000000; // signed zero for underflow
     else if(e>=0xff) iy=(ix&0x80000000)|0x7f800000ULL; // signed infinity on overflow
     else iy=ix+((ui32)de<<23);
-    return ui322float(iy);
+    return *(float*)&iy;
 }
 
 float WRAPPER_FUNC(ldexpf)(float x, int de) {
@@ -97,9 +83,9 @@ float WRAPPER_FUNC(ldexpf)(float x, int de) {
 }
 
 static inline float fcopysign(float x,float y) {
-    ui32 ix=float2ui32(x),iy=float2ui32(y);
+    ui32 ix=*(ui32*)&x,iy=*(ui32*)&y;
     ix=((ix&0x7fffffff)|(iy&0x80000000));
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 float WRAPPER_FUNC(copysignf)(float x, float y) {
@@ -115,7 +101,7 @@ static inline int fispinf(float x)  { return fgetsignexp(x)==0xff; }
 static inline int fisminf(float x)  { return fgetsignexp(x)==0x1ff; }
 
 static inline int fisint(float x) {
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     if(e==0) return 1;       // 0 is an integer
     e-=0x7f;                 // remove exponent bias
@@ -128,7 +114,7 @@ static inline int fisint(float x) {
 }
 
 static inline int fisoddint(float x) {
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     e-=0x7f;                 // remove exponent bias
     if(e<0) return 0;        // |x|<1; 0 is not odd
@@ -141,24 +127,24 @@ static inline int fisoddint(float x) {
 }
 
 static inline int fisstrictneg(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     if(fiszero(x)) return 0;
     return ix>>31;
 }
 
 static inline int fisneg(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     return ix>>31;
 }
 
 static inline float fneg(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     ix^=0x80000000;
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 static inline int fispo2(float x) {
-    ui32 ix=float2ui32(x);
+    ui32 ix=*(ui32*)&x;
     if(fiszero(x)) return 0;
     if(fisinf(x)) return 0;
     ix&=0x007fffff;
@@ -175,33 +161,33 @@ static inline float fnan_or(float x) {
 
 float WRAPPER_FUNC(truncf)(float x) {
     check_nan_f1(x);
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     e-=0x7f;                 // remove exponent bias
     if(e<0) {                // |x|<1
         ix&=0x80000000;
-        return ui322float(ix);
+        return *(float*)&ix;
     }
     e=23-e;                  // bit position in mantissa with significance 1
     if(e<=0) return x;       // |x| large, so must be an integer
     m=(1<<e)-1;              // mask for bits of significance <1
     ix&=~m;
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 float WRAPPER_FUNC(roundf)(float x) {
     check_nan_f1(x);
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     e-=0x7f;                 // remove exponent bias
     if(e<-1) {               // |x|<0.5
         ix&=0x80000000;
-        return ui322float(ix);
+        return *(float*)&ix;
     }
     if(e==-1) {              // 0.5<=|x|<1
         ix&=0x80000000;
         ix|=0x3f800000;        // ±1
-        return ui322float(ix);
+        return *(float*)&ix;
     }
     e=23-e;                  // bit position in mantissa with significance 1, <=23
     if(e<=0) return x;       // |x| large, so must be an integer
@@ -209,16 +195,16 @@ float WRAPPER_FUNC(roundf)(float x) {
     ix+=m;
     m=m+m-1;                 // mask for bits of significance <1
     ix&=~m;
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 float WRAPPER_FUNC(floorf)(float x) {
     check_nan_f1(x);
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     if(e==0) {       // x==0
         ix&=0x80000000;
-        return ui322float(ix);
+        return *(float*)&ix;
     }
     e-=0x7f;                 // remove exponent bias
     if(e<0) {                // |x|<1, not zero
@@ -230,16 +216,16 @@ float WRAPPER_FUNC(floorf)(float x) {
     m=(1<<e)-1;              // mask for bit of significance <1
     if(fisneg(x)) ix+=m;     // add 1-ε to magnitude if negative
     ix&=~m;                  // truncate
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 float WRAPPER_FUNC(ceilf)(float x) {
     check_nan_f1(x);
-    ui32 ix=float2ui32(x),m;
+    ui32 ix=*(ui32*)&x,m;
     int e=fgetexp(x);
     if(e==0) {       // x==0
         ix&=0x80000000;
-        return ui322float(ix);
+        return *(float*)&ix;
     }
     e-=0x7f;                 // remove exponent bias
     if(e<0) {                // |x|<1, not zero
@@ -251,7 +237,7 @@ float WRAPPER_FUNC(ceilf)(float x) {
     m=(1<<e)-1;              // mask for bit of significance <1
     if(!fisneg(x)) ix+=m;    // add 1-ε to magnitude if positive
     ix&=~m;                  // truncate
-    return ui322float(ix);
+    return *(float*)&ix;
 }
 
 float WRAPPER_FUNC(asinf)(float x) {
@@ -519,7 +505,7 @@ static i32 frem_0(i32 mx,i32 my,int e,int*pquo) {
 
 float WRAPPER_FUNC(fmodf)(float x,float y) {
     check_nan_f2(x,y);
-    ui32 ix=float2ui32(x),iy=float2ui32(y);
+    ui32 ix=*(ui32*)&x,iy=*(ui32*)&y;
     int sx,ex,ey;
     i32 mx,my;
     FUNPACKS(ix,sx,ex,mx);
@@ -540,7 +526,7 @@ float WRAPPER_FUNC(fmodf)(float x,float y) {
 
 float WRAPPER_FUNC(remquof)(float x,float y,int*quo) {
     check_nan_f2(x,y);
-    ui32 ix=float2ui32(x),iy=float2ui32(y);
+    ui32 ix=*(ui32*)&x,iy=*(ui32*)&y;
     int sx,sy,ex,ey,q;
     i32 mx,my;
     FUNPACKS(ix,sx,ex,mx);
@@ -581,4 +567,5 @@ float WRAPPER_FUNC(dremf)(float x,float y) { check_nan_f2(x,y); return remquof(x
 
 float WRAPPER_FUNC(remainderf)(float x,float y) { check_nan_f2(x,y); return remquof(x,y,0); }
 
+_Pragma("GCC diagnostic pop") // strict-aliasing
 _Pragma("GCC diagnostic pop") // conversion

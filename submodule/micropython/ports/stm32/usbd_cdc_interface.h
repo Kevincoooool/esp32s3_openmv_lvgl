@@ -58,12 +58,6 @@ typedef struct _usbd_cdc_itf_t {
     uint16_t tx_buf_ptr_out_next; // next position of above once transmission finished
     uint8_t tx_need_empty_packet; // used to flush the USB IN endpoint if the last packet was exactly the endpoint packet size
 
-    uint32_t baudrate;
-    volatile uint8_t dbg_mode_enabled;
-    volatile uint32_t dbg_last_packet;
-    volatile uint32_t dbg_xfer_length;
-    uint8_t dbg_xfer_buffer[CDC_DATA_MAX_PACKET_SIZE];
-
     uint8_t cdc_idx; // between 0 and MICROPY_HW_USB_CDC_NUM-1
     volatile uint8_t connect_state; // indicates if we are connected
     uint8_t attached_to_repl; // indicates if interface is connected to REPL
@@ -77,10 +71,6 @@ static inline int usbd_cdc_is_connected(usbd_cdc_itf_t *cdc) {
     return cdc->connect_state == USBD_CDC_CONNECT_STATE_CONNECTED;
 }
 
-static inline int usbd_cdc_debug_mode_enabled(usbd_cdc_itf_t *cdc) {
-    return cdc->dbg_mode_enabled;
-}
-
 int usbd_cdc_tx_half_empty(usbd_cdc_itf_t *cdc);
 int usbd_cdc_tx_flow(usbd_cdc_itf_t *cdc, const uint8_t *buf, uint32_t len);
 int usbd_cdc_tx(usbd_cdc_itf_t *cdc, const uint8_t *buf, uint32_t len, uint32_t timeout);
@@ -89,8 +79,5 @@ void usbd_cdc_tx_always(usbd_cdc_itf_t *cdc, const uint8_t *buf, uint32_t len);
 int usbd_cdc_rx_num(usbd_cdc_itf_t *cdc);
 int usbd_cdc_rx(usbd_cdc_itf_t *cdc, uint8_t *buf, uint32_t len, uint32_t timeout);
 void usbd_cdc_rx_event_callback(usbd_cdc_itf_t *cdc);
-
-uint32_t usbd_cdc_buf_len(usbd_cdc_itf_t *cdc);
-uint32_t usbd_cdc_get_buf(usbd_cdc_itf_t *cdc, uint8_t *buf, uint32_t len);
 
 #endif // MICROPY_INCLUDED_STM32_USBD_CDC_INTERFACE_H

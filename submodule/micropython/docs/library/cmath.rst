@@ -9,6 +9,9 @@
 The ``cmath`` module provides some basic mathematical functions for
 working with complex numbers.
 
+Availability: not available on WiPy and ESP8266. Floating point support
+required for this module.
+
 Functions
 ---------
 

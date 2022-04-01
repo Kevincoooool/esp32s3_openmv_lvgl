@@ -99,11 +99,6 @@ static void usb_detach(void)
   USBD->DRVSE0 |= USBD_DRVSE0_DRVSE0_Msk;
 }
 
-static inline void usb_memcpy(uint8_t *dest, uint8_t *src, uint16_t size)
-{
-  while(size--) *dest++ = *src++;
-}
-
 static void usb_control_send_zlp(void)
 {
   USBD->EP[PERIPH_EP0].CFG |= USBD_CFG_DSQ_SYNC_Msk;
@@ -156,8 +151,7 @@ static void dcd_in_xfer(struct xfer_ctl_t *xfer, USBD_EP_T *ep)
   else
 #endif
   {
-    // USB SRAM seems to only support byte access and memcpy could possibly do it by words
-    usb_memcpy((uint8_t *)(USBD_BUF_BASE + ep->BUFSEG), xfer->data_ptr, bytes_now);
+    memcpy((uint8_t *)(USBD_BUF_BASE + ep->BUFSEG), xfer->data_ptr, bytes_now);
   }
 
   ep->MXPLD = bytes_now;
@@ -252,7 +246,7 @@ bool dcd_edpt_open(uint8_t rhport, tusb_desc_endpoint_t const * p_endpoint_desc)
   /* mine the data for the information we need */
   int const dir = tu_edpt_dir(p_endpoint_desc->bEndpointAddress);
   int const size = p_endpoint_desc->wMaxPacketSize.size;
-  tusb_xfer_type_t const type = (tusb_xfer_type_t) p_endpoint_desc->bmAttributes.xfer;
+  tusb_xfer_type_t const type = p_endpoint_desc->bmAttributes.xfer;
   struct xfer_ctl_t *xfer = &xfer_table[ep - USBD->EP];
 
   /* allocate buffer from USB RAM */
@@ -271,12 +265,6 @@ bool dcd_edpt_open(uint8_t rhport, tusb_desc_endpoint_t const * p_endpoint_desc)
   xfer->max_packet_size = size;
 
   return true;
-}
-
-void dcd_edpt_close_all (uint8_t rhport)
-{
-  (void) rhport;
-  // TODO implement dcd_edpt_close_all()
 }
 
 bool dcd_edpt_xfer(uint8_t rhport, uint8_t ep_addr, uint8_t *buffer, uint16_t total_bytes)
@@ -451,8 +439,7 @@ void dcd_int_handler(uint8_t rhport)
           else
 #endif
           {
-            // USB SRAM seems to only support byte access and memcpy could possibly do it by words
-            usb_memcpy(xfer->data_ptr, (uint8_t *)(USBD_BUF_BASE + ep->BUFSEG), available_bytes);
+            memcpy(xfer->data_ptr, (uint8_t *)(USBD_BUF_BASE + ep->BUFSEG), available_bytes);
             xfer->data_ptr += available_bytes;
           }
 

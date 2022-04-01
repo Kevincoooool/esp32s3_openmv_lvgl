@@ -44,8 +44,6 @@
 #define PLATFORM_ARCH   "x86_64"
 #elif defined(__i386__) || defined(_M_IX86)
 #define PLATFORM_ARCH   "x86"
-#elif defined(__xtensa__) || defined(_M_IX86)
-#define PLATFORM_ARCH   "xtensa"
 #else
 #define PLATFORM_ARCH   ""
 #endif
@@ -101,12 +99,20 @@
 #define PLATFORM_SYSTEM     "MicroPython"
 #endif
 
-#ifndef MICROPY_PLATFORM_VERSION
-#define MICROPY_PLATFORM_VERSION ""
+#ifndef MICROPY_HW_BOARD_NAME
+#define MICROPY_HW_BOARD_NAME PLATFORM_ARCH
 #endif
 
-STATIC const MP_DEFINE_STR_OBJ(info_platform_obj, PLATFORM_SYSTEM "-" MICROPY_VERSION_STRING "-" \
-    PLATFORM_ARCH "-" MICROPY_PLATFORM_VERSION "-with-" PLATFORM_LIBC_LIB "" PLATFORM_LIBC_VER);
+#ifndef MICROPY_HW_MCU_NAME
+#define MICROPY_HW_MCU_NAME     ""
+#endif
+
+#ifndef MICROPY_HAL_VERSION
+#define MICROPY_HAL_VERSION     ""
+#endif
+
+STATIC const MP_DEFINE_STR_OBJ(info_platform_obj, PLATFORM_SYSTEM "-" MICROPY_VERSION_STRING "-HAL" \
+    MICROPY_HAL_VERSION "-" PLATFORM_ARCH "-with-" PLATFORM_LIBC_LIB "" PLATFORM_LIBC_VER);
 STATIC const MP_DEFINE_STR_OBJ(info_python_compiler_obj, PLATFORM_COMPILER);
 STATIC const MP_DEFINE_STR_OBJ(info_libc_lib_obj, PLATFORM_LIBC_LIB);
 STATIC const MP_DEFINE_STR_OBJ(info_libc_ver_obj, PLATFORM_LIBC_VER);

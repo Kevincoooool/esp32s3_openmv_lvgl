@@ -102,25 +102,6 @@ extern const dma_descr_t dma_I2C_4_RX;
 
 #endif
 
-#if defined(STM32F7)
-// NOTE: F7 CCM memory is accessible by GP-DMA.
-#define DMA_BUFFER(p)       (((uint32_t)p & 3) == 0)
-#elif defined(STM32F4)
-// NOTE: F4 CCM memory is not accessible by GP-DMA.
-#define DMA_BUFFER(p)       ((((uint32_t)p & 3) == 0) && ((uint32_t) p > 0x10010000))
-#elif defined(STM32H7)
-#define DMA_BUFFER(p)       (((uint32_t)p & 3) == 0)
-#else
-#error Unsupported processor
-#endif
-
-// NOTE: H7 SD DMA can only access D1 memory/devices.
-#if !defined(STM32H7)
-    #define IS_D1_ADDR(p)   (1)
-#else
-    #define IS_D1_ADDR(p)   (((uint32_t) p >= 0x60000000) && ((uint32_t) p < 0xD0000000))
-#endif
-
 // API that configures the DMA via the HAL.
 void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t *dma_descr, uint32_t dir, void *data);
 void dma_init_handle(DMA_HandleTypeDef *dma, const dma_descr_t *dma_descr, uint32_t dir, void *data);

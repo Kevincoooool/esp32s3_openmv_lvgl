@@ -25,7 +25,6 @@
 #include "host/ble_uuid.h"
 #include "ble_hs_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 /**
  * ATT server - Attribute Protocol
  *
@@ -1361,7 +1360,7 @@ done:
         *att_err = 0;
 
         /* Fill the response base. */
-        rsp->batp_length = sizeof(*data) + prev_attr_len;
+        rsp->batp_length = htole16(sizeof(*data) + prev_attr_len);
     }
 
     *out_txom = txom;
@@ -2728,5 +2727,3 @@ ble_att_svr_init(void)
 
     return 0;
 }
-
-#endif

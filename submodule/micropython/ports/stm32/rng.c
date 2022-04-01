@@ -31,42 +31,6 @@
 
 #define RNG_TIMEOUT_MS (10)
 
-static void rng_init()
-{
-    #if defined(STM32H7)
-    // Set RNG clock source
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RNG;
-    PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_PLL;
-    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
-    #endif
-
-    __HAL_RCC_RNG_CLK_ENABLE();
-    RNG->CR |= RNG_CR_RNGEN;
-}
-
-uint32_t rng_randint(uint32_t min, uint32_t max) {
-    if (min==max) {
-        return 0;
-    }
-
-    // Enable the RNG peripheral if it's not already enabled
-    if (!(RNG->CR & RNG_CR_RNGEN)) {
-        rng_init();
-    }
-
-    // Wait until the RNG is ready
-    while (!(RNG->SR & RNG_SR_DRDY)) {
-    }
-
-    return (RNG->DR%(max-min))+min;
-}
-
-STATIC mp_obj_t pyb_rng_randint(mp_obj_t min, mp_obj_t max) {
-    return mp_obj_new_int(rng_randint(mp_obj_get_int(min), mp_obj_get_int(max)));
-}
-MP_DEFINE_CONST_FUN_OBJ_2(pyb_rng_randint_obj, pyb_rng_randint);
-
 uint32_t rng_get(void) {
     // Enable the RNG peripheral if it's not already enabled
     if (!(RNG->CR & RNG_CR_RNGEN)) {

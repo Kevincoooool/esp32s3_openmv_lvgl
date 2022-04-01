@@ -8,12 +8,9 @@
 #define PICO_H_
 
 /** \file pico.h
- *  \defgroup pico_base pico_base
- *
- * Core types and macros for the Raspberry Pi Pico SDK. This header is intended to be included by all source code
- * as it includes configuration headers and overrides in the correct order
- *
- * This header may be included by assembly code
+*  \defgroup pico_base pico_base
+*
+* Core types and macros for the Raspberry Pi Pico SDK. This header is intended to be included by all source code
 */
 
 #include "pico/types.h"

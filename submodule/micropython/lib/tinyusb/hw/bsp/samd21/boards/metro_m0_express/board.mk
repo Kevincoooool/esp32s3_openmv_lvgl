@@ -1,4 +1,4 @@
-CFLAGS += -D__SAMD21G18A__ -DCFG_EXAMPLE_VIDEO_READONLY
+CFLAGS += -D__SAMD21G18A__
 
 # All source paths should be relative to the top level.
 LD_FILE = $(BOARD_PATH)/$(BOARD).ld

@@ -35,7 +35,6 @@
 #include "systick.h"
 #include "portmodules.h"
 #include "rtc.h"
-#include "py_clock.h"
 
 /// \module time - time related functions
 ///
@@ -145,7 +144,6 @@ STATIC const mp_rom_map_elem_t time_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ticks_cpu), MP_ROM_PTR(&mp_utime_ticks_cpu_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_add), MP_ROM_PTR(&mp_utime_ticks_add_obj) },
     { MP_ROM_QSTR(MP_QSTR_ticks_diff), MP_ROM_PTR(&mp_utime_ticks_diff_obj) },
-    { MP_ROM_QSTR(MP_QSTR_clock),      MP_ROM_PTR(&py_clock_type) },
     { MP_ROM_QSTR(MP_QSTR_time_ns), MP_ROM_PTR(&mp_utime_time_ns_obj) },
 };
 

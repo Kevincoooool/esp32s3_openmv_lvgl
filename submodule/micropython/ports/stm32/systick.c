@@ -177,16 +177,3 @@ mp_uint_t mp_hal_ticks_us(void) {
     // and is the same thing as (counter * 1000) / (load + 1)
     return milliseconds * 1000 + (counter * 1000) / (load + 1);
 }
-
-void systick_sleep(volatile uint32_t ms)
-{
-    volatile uint32_t curr_ticks = HAL_GetTick();
-    while ((HAL_GetTick() - curr_ticks) < ms) {
-        __WFI();
-    }
-}
-
-uint32_t systick_current_millis()
-{
-    return HAL_GetTick();
-}

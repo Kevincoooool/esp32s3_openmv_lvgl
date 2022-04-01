@@ -56,7 +56,7 @@
 /   3: f_lseek() function is removed in addition to 2. */
 
 
-#define FF_USE_STRFUNC  1
+#define FF_USE_STRFUNC  0
 /* This option switches string functions, f_gets(), f_putc(), f_puts() and f_printf().
 /
 /  0: Disable string functions.
@@ -91,7 +91,6 @@
 #else
 #define FF_USE_LABEL    0
 #endif
-
 /* This option switches volume label functions, f_getlabel() and f_setlabel().
 /  (0:Disable or 1:Enable) */
 
@@ -105,11 +104,10 @@
 /---------------------------------------------------------------------------*/
 
 #ifdef MICROPY_FATFS_LFN_CODE_PAGE
-#define FF_CODE_PAGE  MICROPY_FATFS_LFN_CODE_PAGE
+#define FF_CODE_PAGE MICROPY_FATFS_LFN_CODE_PAGE
 #else
 #define FF_CODE_PAGE 437
 #endif
-
 /* This option specifies the OEM code page to be used on the target system.
 /  Incorrect code page setting can cause a file open failure.
 /
@@ -366,8 +364,6 @@
 /  SemaphoreHandle_t and etc. A header file for O/S definitions needs to be
 /  included somewhere in the scope of ff.h. */
 
-// Legacy definitions
-#define _MAX_SS     FF_MAX_SS
-#define _MIN_SS     FF_MIN_SS
-#define _MAX_LFN    FF_MAX_LFN
+
+
 /*--- End of configuration options ---*/

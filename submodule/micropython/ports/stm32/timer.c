@@ -72,7 +72,7 @@
 // TIM3:
 //  - LED 4, PWM to set the LED intensity
 //
-// TIM4:
+// TIM5:
 //  - servo controller, PWM
 //
 // TIM6:
@@ -142,7 +142,7 @@ typedef struct _pyb_timer_obj_t {
 #define TIMER_CNT_MASK(self)    ((self)->is_32bit ? 0xffffffff : 0xffff)
 #define TIMER_CHANNEL(self)     ((((self)->channel) - 1) << 2)
 
-TIM_HandleTypeDef TIM4_Handle;
+TIM_HandleTypeDef TIM5_Handle;
 TIM_HandleTypeDef TIM6_Handle;
 
 #define PYB_TIMER_OBJ_ALL_NUM MP_ARRAY_SIZE(MP_STATE_PORT(pyb_timer_obj_all))
@@ -167,25 +167,25 @@ void timer_deinit(void) {
     }
 }
 
-#if defined(TIM4)
-// TIM4 is set-up for the servo controller
+#if defined(TIM5)
+// TIM5 is set-up for the servo controller
 // This function inits but does not start the timer
-void timer_tim4_init(void) {
-    // TIM4 clock enable
-    __HAL_RCC_TIM4_CLK_ENABLE();
+void timer_tim5_init(void) {
+    // TIM5 clock enable
+    __HAL_RCC_TIM5_CLK_ENABLE();
 
     // set up and enable interrupt
-    NVIC_SetPriority(TIM4_IRQn, IRQ_PRI_TIM4);
-    HAL_NVIC_EnableIRQ(TIM4_IRQn);
+    NVIC_SetPriority(TIM5_IRQn, IRQ_PRI_TIM5);
+    HAL_NVIC_EnableIRQ(TIM5_IRQn);
 
     // PWM clock configuration
-    TIM4_Handle.Instance = TIM4;
-    TIM4_Handle.Init.Period = 2000 - 1; // timer cycles at 50Hz
-    TIM4_Handle.Init.Prescaler = (timer_get_source_freq(4) / 100000) - 1; // timer runs at 100kHz
-    TIM4_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    TIM4_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
+    TIM5_Handle.Instance = TIM5;
+    TIM5_Handle.Init.Period = 2000 - 1; // timer cycles at 50Hz
+    TIM5_Handle.Init.Prescaler = (timer_get_source_freq(5) / 100000) - 1; // timer runs at 100kHz
+    TIM5_Handle.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    TIM5_Handle.Init.CounterMode = TIM_COUNTERMODE_UP;
 
-    HAL_TIM_PWM_Init(&TIM4_Handle);
+    HAL_TIM_PWM_Init(&TIM5_Handle);
 }
 #endif
 
@@ -221,7 +221,7 @@ TIM_HandleTypeDef *timer_tim6_init(uint freq) {
 // Interrupt dispatch
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     #if MICROPY_HW_ENABLE_SERVO
-    if (htim == &TIM4_Handle) {
+    if (htim == &TIM5_Handle) {
         servo_timer_irq_callback();
     }
     #endif
@@ -1548,14 +1548,6 @@ STATIC mp_obj_t pyb_timer_channel_callback(mp_obj_t self_in, mp_obj_t callback) 
         {
             HAL_NVIC_EnableIRQ(self->timer->irqn);
         }
-
-        #if defined(STM32H7)
-        // In the newer H7 HALs the HAL_PWM/IC/OC_Start() functions set the channel state to busy,
-        // this will cause HAL_PWM/IC/OC_Start_IT() functions to fail becasue the state is set busy.
-        // Make sure the channel state is reset to ready before calling HAL_PWM/IC/OC_Start_IT()
-        TIM_CHANNEL_STATE_SET(&self->timer->tim, TIMER_CHANNEL(self), HAL_TIM_CHANNEL_STATE_READY);
-        #endif
-
         // start timer, so that it interrupts on overflow
         switch (self->mode) {
             case CHANNEL_MODE_PWM_NORMAL:

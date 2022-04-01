@@ -391,6 +391,8 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
         esp_exceptions(esp_wifi_get_config(self->if_id, &cfg));
     }
 
+    #define QS(x) (uintptr_t)MP_OBJ_NEW_QSTR(x)
+
     if (kwargs->used != 0) {
         if (!is_wifi) {
             goto unknown;
@@ -400,8 +402,8 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
             if (mp_map_slot_is_filled(kwargs, i)) {
                 int req_if = -1;
 
-                switch (mp_obj_str_get_qstr(kwargs->table[i].key)) {
-                    case MP_QSTR_mac: {
+                switch ((uintptr_t)kwargs->table[i].key) {
+                    case QS(MP_QSTR_mac): {
                         mp_buffer_info_t bufinfo;
                         mp_get_buffer_raise(kwargs->table[i].value, &bufinfo, MP_BUFFER_READ);
                         if (bufinfo.len != 6) {
@@ -410,7 +412,7 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
                         esp_exceptions(esp_wifi_set_mac(self->if_id, bufinfo.buf));
                         break;
                     }
-                    case MP_QSTR_essid: {
+                    case QS(MP_QSTR_essid): {
                         req_if = WIFI_IF_AP;
                         size_t len;
                         const char *s = mp_obj_str_get_data(kwargs->table[i].value, &len);
@@ -419,17 +421,17 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
                         cfg.ap.ssid_len = len;
                         break;
                     }
-                    case MP_QSTR_hidden: {
+                    case QS(MP_QSTR_hidden): {
                         req_if = WIFI_IF_AP;
                         cfg.ap.ssid_hidden = mp_obj_is_true(kwargs->table[i].value);
                         break;
                     }
-                    case MP_QSTR_authmode: {
+                    case QS(MP_QSTR_authmode): {
                         req_if = WIFI_IF_AP;
                         cfg.ap.authmode = mp_obj_get_int(kwargs->table[i].value);
                         break;
                     }
-                    case MP_QSTR_password: {
+                    case QS(MP_QSTR_password): {
                         req_if = WIFI_IF_AP;
                         size_t len;
                         const char *s = mp_obj_str_get_data(kwargs->table[i].value, &len);
@@ -438,22 +440,22 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
                         cfg.ap.password[len] = 0;
                         break;
                     }
-                    case MP_QSTR_channel: {
+                    case QS(MP_QSTR_channel): {
                         req_if = WIFI_IF_AP;
                         cfg.ap.channel = mp_obj_get_int(kwargs->table[i].value);
                         break;
                     }
-                    case MP_QSTR_dhcp_hostname: {
+                    case QS(MP_QSTR_dhcp_hostname): {
                         const char *s = mp_obj_str_get_str(kwargs->table[i].value);
                         esp_exceptions(tcpip_adapter_set_hostname(self->if_id, s));
                         break;
                     }
-                    case MP_QSTR_max_clients: {
+                    case QS(MP_QSTR_max_clients): {
                         req_if = WIFI_IF_AP;
                         cfg.ap.max_connection = mp_obj_get_int(kwargs->table[i].value);
                         break;
                     }
-                    case MP_QSTR_reconnects: {
+                    case QS(MP_QSTR_reconnects): {
                         int reconnects = mp_obj_get_int(kwargs->table[i].value);
                         req_if = WIFI_IF_STA;
                         // parameter reconnects == -1 means to retry forever.
@@ -486,8 +488,8 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
     int req_if = -1;
     mp_obj_t val = mp_const_none;
 
-    switch (mp_obj_str_get_qstr(args[1])) {
-        case MP_QSTR_mac: {
+    switch ((uintptr_t)args[1]) {
+        case QS(MP_QSTR_mac): {
             uint8_t mac[6];
             switch (self->if_id) {
                 case WIFI_IF_AP: // fallthrough intentional
@@ -498,7 +500,7 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
                     goto unknown;
             }
         }
-        case MP_QSTR_essid:
+        case QS(MP_QSTR_essid):
             switch (self->if_id) {
                 case WIFI_IF_STA:
                     val = mp_obj_new_str((char *)cfg.sta.ssid, strlen((char *)cfg.sta.ssid));
@@ -510,29 +512,29 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
                     req_if = WIFI_IF_AP;
             }
             break;
-        case MP_QSTR_hidden:
+        case QS(MP_QSTR_hidden):
             req_if = WIFI_IF_AP;
             val = mp_obj_new_bool(cfg.ap.ssid_hidden);
             break;
-        case MP_QSTR_authmode:
+        case QS(MP_QSTR_authmode):
             req_if = WIFI_IF_AP;
             val = MP_OBJ_NEW_SMALL_INT(cfg.ap.authmode);
             break;
-        case MP_QSTR_channel:
+        case QS(MP_QSTR_channel):
             req_if = WIFI_IF_AP;
             val = MP_OBJ_NEW_SMALL_INT(cfg.ap.channel);
             break;
-        case MP_QSTR_dhcp_hostname: {
+        case QS(MP_QSTR_dhcp_hostname): {
             const char *s;
             esp_exceptions(tcpip_adapter_get_hostname(self->if_id, &s));
             val = mp_obj_new_str(s, strlen(s));
             break;
         }
-        case MP_QSTR_max_clients: {
+        case QS(MP_QSTR_max_clients): {
             val = MP_OBJ_NEW_SMALL_INT(cfg.ap.max_connection);
             break;
         }
-        case MP_QSTR_reconnects:
+        case QS(MP_QSTR_reconnects):
             req_if = WIFI_IF_STA;
             int rec = conf_wifi_sta_reconnects - 1;
             val = MP_OBJ_NEW_SMALL_INT(rec);
@@ -540,6 +542,8 @@ STATIC mp_obj_t network_wlan_config(size_t n_args, const mp_obj_t *args, mp_map_
         default:
             goto unknown;
     }
+
+#undef QS
 
     // We post-check interface requirements to save on code size
     if (req_if >= 0) {

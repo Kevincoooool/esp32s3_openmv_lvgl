@@ -37,9 +37,6 @@ enum {
     #if MICROPY_PY_NETWORK && MICROPY_PY_LWIP
     SYSTICK_DISPATCH_LWIP,
     #endif
-    #if MICROPY_PY_WINC1500
-    SYSTICK_DISPATCH_WINC,
-    #endif
     SYSTICK_DISPATCH_MAX
 };
 
@@ -57,8 +54,6 @@ static inline void systick_disable_dispatch(size_t slot) {
     systick_dispatch_table[slot] = NULL;
 }
 
-void systick_sleep(uint32_t ms);
-uint32_t systick_current_millis();
 void systick_wait_at_least(uint32_t stc, uint32_t delay_ms);
 bool systick_has_passed(uint32_t stc, uint32_t delay_ms);
 

@@ -48,7 +48,6 @@
 #include "host/ble_sm.h"
 #include "ble_hs_priv.h"
 
-#if NIMBLE_BLE_CONNECT
 #if NIMBLE_BLE_SM
 
 /** Procedure timeout; 30 seconds. */
@@ -939,7 +938,7 @@ ble_sm_process_result(uint16_t conn_handle, struct ble_sm_result *res)
 
         if (res->enc_cb) {
             BLE_HS_DBG_ASSERT(proc == NULL || rm);
-            ble_gap_enc_event(conn_handle, res->app_status, res->restore, res->bonded);
+            ble_gap_enc_event(conn_handle, res->app_status, res->restore);
         }
 
         if (res->app_status == 0 &&
@@ -1191,7 +1190,6 @@ ble_sm_enc_event_rx(uint16_t conn_handle, uint8_t evt_status, int encrypted)
 
     ble_hs_unlock();
 
-    res.bonded = bonded;
     ble_sm_process_result(conn_handle, &res);
 }
 
@@ -1886,9 +1884,6 @@ ble_sm_pair_rsp_rx(uint16_t conn_handle, struct os_mbuf **om,
         } else if (rsp->max_enc_key_size > BLE_SM_PAIR_KEY_SZ_MAX) {
             res->sm_err = BLE_SM_ERR_INVAL;
             res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_INVAL);
-        } else if (!ble_sm_verify_auth_requirements(rsp->authreq)) {
-            res->sm_err = BLE_SM_ERR_AUTHREQ;
-            res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_AUTHREQ);
         } else {
             ble_sm_pair_cfg(proc);
 
@@ -2430,7 +2425,7 @@ ble_sm_timer(void)
      * procedures without reconnect.
      */
     while ((proc = STAILQ_FIRST(&exp_list)) != NULL) {
-        ble_gap_enc_event(proc->conn_handle, BLE_HS_ETIMEOUT, 0, 0);
+        ble_gap_enc_event(proc->conn_handle, BLE_HS_ETIMEOUT, 0);
 
         STAILQ_REMOVE_HEAD(&exp_list, next);
         ble_sm_proc_free(proc);
@@ -2816,5 +2811,3 @@ ble_sm_create_chan(uint16_t conn_handle)
 
     return chan;
 }
-
-#endif

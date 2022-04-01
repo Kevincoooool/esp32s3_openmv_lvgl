@@ -53,6 +53,8 @@
 #define GPIO_FIRST_NON_OUTPUT (34)
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define GPIO_FIRST_NON_OUTPUT (46)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define GPIO_FIRST_NON_OUTPUT (48)
 #endif
 
 typedef struct _machine_pin_obj_t {
@@ -177,11 +179,7 @@ STATIC const machine_pin_obj_t machine_pin_obj[] = {
     {{NULL}, -1}, // 23 not a pin
     {{NULL}, -1}, // 24 not a pin
     {{NULL}, -1}, // 25 not a pin
-    #if CONFIG_SPIRAM
-    {{NULL}, -1}, // 26 PSRAM
-    #else
-    {{&machine_pin_type}, GPIO_NUM_26},
-    #endif
+    {{NULL}, -1}, // 26 FLASH/PSRAM
     {{NULL}, -1}, // 27 FLASH/PSRAM
     {{NULL}, -1}, // 28 FLASH/PSRAM
     {{NULL}, -1}, // 29 FLASH/PSRAM
@@ -202,14 +200,8 @@ STATIC const machine_pin_obj_t machine_pin_obj[] = {
     {{&machine_pin_type}, GPIO_NUM_44}, // U0RXD
     {{&machine_pin_type}, GPIO_NUM_45},
     {{&machine_pin_type}, GPIO_NUM_46},
-
-    #endif
-
-    #if CONFIG_IDF_TARGET_ESP32S3 && MICROPY_HW_ESP32S3_EXTENDED_IO
-
-    {{&machine_pin_type}, GPIO_NUM_47},
-    {{&machine_pin_type}, GPIO_NUM_48},
-
+{{&machine_pin_type}, GPIO_NUM_47},
+{{&machine_pin_type}, GPIO_NUM_48},
     #endif
 };
 
@@ -622,11 +614,7 @@ STATIC const machine_pin_irq_obj_t machine_pin_irq_object[] = {
     {{NULL}, -1}, // 23 not a pin
     {{NULL}, -1}, // 24 not a pin
     {{NULL}, -1}, // 25 not a pin
-    #if CONFIG_SPIRAM
-    {{NULL}, -1}, // 26 PSRAM
-    #else
-    {{&machine_pin_irq_type}, GPIO_NUM_26},
-    #endif
+    {{NULL}, -1}, // 26 FLASH/PSRAM
     {{NULL}, -1}, // 27 FLASH/PSRAM
     {{NULL}, -1}, // 28 FLASH/PSRAM
     {{NULL}, -1}, // 29 FLASH/PSRAM
@@ -646,14 +634,6 @@ STATIC const machine_pin_irq_obj_t machine_pin_irq_object[] = {
     {{&machine_pin_irq_type}, GPIO_NUM_43},
     {{&machine_pin_irq_type}, GPIO_NUM_44},
     {{&machine_pin_irq_type}, GPIO_NUM_45},
-    {{&machine_pin_irq_type}, GPIO_NUM_46},
-
-    #endif
-
-    #if CONFIG_IDF_TARGET_ESP32S3 && MICROPY_HW_ESP32S3_EXTENDED_IO
-
-    {{&machine_pin_irq_type}, GPIO_NUM_47},
-    {{&machine_pin_irq_type}, GPIO_NUM_48},
 
     #endif
 };

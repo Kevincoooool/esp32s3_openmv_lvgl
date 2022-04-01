@@ -699,9 +699,9 @@ int pyexec_file_if_exists(const char *filename) {
 #if MICROPY_MODULE_FROZEN
 int pyexec_frozen_module(const char *name) {
     void *frozen_data;
-    int frozen_type;
-    // int frozen_type = mp_find_frozen_module(name, strlen(name), &frozen_data);
-    mp_find_frozen_module(name, &frozen_type, &frozen_data);
+    // int frozen_type;
+    int frozen_type = mp_find_frozen_module(name, strlen(name), &frozen_data);
+    // mp_find_frozen_module(name, &frozen_type, &frozen_data);
 
     switch (frozen_type) {
         #if MICROPY_MODULE_FROZEN_STR

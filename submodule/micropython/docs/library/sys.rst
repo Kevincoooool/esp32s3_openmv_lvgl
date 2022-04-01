@@ -43,15 +43,6 @@ Functions
       positional; further arguments are not supported. CPython-compatible
       ``traceback`` module can be found in `micropython-lib`.
 
-.. function:: settrace(tracefunc)
-
-   Enable tracing of bytecode execution.  For details see the `CPython
-   documentaion <https://docs.python.org/3/library/sys.html#sys.settrace>`_.
-
-   This function requires a custom MicroPython build as it is typically not
-   present in pre-built firmware (due to it affecting performance).  The relevant
-   configuration option is *MICROPY_PY_SYS_SETTRACE*.
-
 Constants
 ---------
 
@@ -115,14 +106,6 @@ Constants
 
    A mutable list of directories to search for imported modules.
 
-   .. admonition:: Difference to CPython
-      :class: attention
-
-      On MicroPython, an entry with the value ``".frozen"`` will indicate that import
-      should search :term:`frozen modules <frozen module>` at that point in the search.
-      If no frozen module is found then search will *not* look for a directory called
-      ``.frozen``, instead it will continue with the next entry in ``sys.path``.
-
 .. data:: platform
 
    The platform that MicroPython is running on. For OS/RTOS ports, this is
@@ -134,15 +117,15 @@ Constants
 
 .. data:: stderr
 
-   Standard error :std:term:`stream`.
+   Standard error `stream`.
 
 .. data:: stdin
 
-   Standard input :std:term:`stream`.
+   Standard input `stream`.
 
 .. data:: stdout
 
-   Standard output :std:term:`stream`.
+   Standard output `stream`.
 
 .. data:: version
 

@@ -56,7 +56,7 @@ ble_hs_misc_conn_chan_find(uint16_t conn_handle, uint16_t cid,
     return rc;
 }
 
-int
+void
 ble_hs_misc_conn_chan_find_reqd(uint16_t conn_handle, uint16_t cid,
                                 struct ble_hs_conn **out_conn,
                                 struct ble_l2cap_chan **out_chan)
@@ -66,9 +66,7 @@ ble_hs_misc_conn_chan_find_reqd(uint16_t conn_handle, uint16_t cid,
     int rc;
 
     rc = ble_hs_misc_conn_chan_find(conn_handle, cid, &conn, &chan);
-    if (rc != 0) {
-        return rc;
-    }
+    BLE_HS_DBG_ASSERT_EVAL(rc == 0);
 
     if (out_conn != NULL) {
         *out_conn = conn;
@@ -76,8 +74,6 @@ ble_hs_misc_conn_chan_find_reqd(uint16_t conn_handle, uint16_t cid,
     if (out_chan != NULL) {
         *out_chan = chan;
     }
-
-    return 0;
 }
 
 uint8_t

@@ -121,7 +121,6 @@ bool tud_hid_n_keyboard_report(uint8_t instance, uint8_t report_id, uint8_t modi
   hid_keyboard_report_t report;
 
   report.modifier = modifier;
-  report.reserved = 0;
 
   if ( keycode )
   {
@@ -150,7 +149,7 @@ bool tud_hid_n_mouse_report(uint8_t instance, uint8_t report_id,
 }
 
 bool tud_hid_n_gamepad_report(uint8_t instance, uint8_t report_id,
-                              int8_t x, int8_t y, int8_t z, int8_t rz, int8_t rx, int8_t ry, uint8_t hat, uint32_t buttons)
+                              int8_t x, int8_t y, int8_t z, int8_t rz, int8_t rx, int8_t ry, uint8_t hat, uint16_t buttons)
 {
   hid_gamepad_report_t report =
   {
@@ -281,21 +280,7 @@ bool hidd_control_xfer_cb (uint8_t rhport, uint8_t stage, tusb_control_request_t
           uint8_t const report_type = tu_u16_high(request->wValue);
           uint8_t const report_id   = tu_u16_low(request->wValue);
 
-          uint8_t* report_buf = p_hid->epin_buf;
-          uint16_t req_len = tu_min16(request->wLength, CFG_TUD_HID_EP_BUFSIZE);
-
-          uint16_t xferlen = 0;
-
-          // If host request a specific Report ID, add ID to as 1 byte of response
-          if ( (report_id != HID_REPORT_TYPE_INVALID) && (req_len > 1) )
-          {
-            *report_buf++ = report_id;
-            req_len--;
-
-            xferlen++;
-          }
-
-          xferlen += tud_hid_get_report_cb(hid_itf, report_id, (hid_report_type_t) report_type, report_buf, req_len);
+          uint16_t xferlen = tud_hid_get_report_cb(hid_itf, report_id, (hid_report_type_t) report_type, p_hid->epin_buf, request->wLength);
           TU_ASSERT( xferlen > 0 );
 
           tud_control_xfer(rhport, request, p_hid->epin_buf, xferlen);
@@ -313,17 +298,7 @@ bool hidd_control_xfer_cb (uint8_t rhport, uint8_t stage, tusb_control_request_t
           uint8_t const report_type = tu_u16_high(request->wValue);
           uint8_t const report_id   = tu_u16_low(request->wValue);
 
-          uint8_t const* report_buf = p_hid->epout_buf;
-          uint16_t report_len = tu_min16(request->wLength, CFG_TUD_HID_EP_BUFSIZE);
-
-          // If host request a specific Report ID, extract report ID in buffer before invoking callback
-          if ( (report_id != HID_REPORT_TYPE_INVALID) && (report_len > 1) && (report_id == report_buf[0]) )
-          {
-            report_buf++;
-            report_len--;
-          }
-
-          tud_hid_set_report_cb(hid_itf, report_id, (hid_report_type_t) report_type, report_buf, report_len);
+          tud_hid_set_report_cb(hid_itf, report_id, (hid_report_type_t) report_type, p_hid->epout_buf, request->wLength);
         }
       break;
 

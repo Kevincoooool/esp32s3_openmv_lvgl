@@ -60,10 +60,6 @@ Q(<string>)
 Q(<stdin>)
 Q(utf-8)
 
-#if MICROPY_MODULE_FROZEN
-Q(.frozen)
-#endif
-
 #if MICROPY_ENABLE_PYSTACK
 Q(pystack exhausted)
 #endif

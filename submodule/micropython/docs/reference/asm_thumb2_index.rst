@@ -3,8 +3,8 @@
 Inline assembler for Thumb2 architectures
 =========================================
 
-This document assumes some familiarity with assembly language programming.
-For a detailed description of the instruction set consult the
+This document assumes some familiarity with assembly language programming and should be read after studying
+the :ref:`tutorial <pyboard_tutorial_assembler>`. For a detailed description of the instruction set consult the
 Architecture Reference Manual detailed below.
 The inline assembler supports a subset of the ARM Thumb-2 instruction set described here. The syntax tries
 to be as close as possible to that defined in the above ARM manual, converted to Python function calls.
@@ -60,6 +60,7 @@ These sections provide further code examples and hints on the use of the assembl
 References
 ----------
 
+-  :ref:`Assembler Tutorial <pyboard_tutorial_assembler>`
 -  `Wiki hints and tips
    <http://wiki.micropython.org/platforms/boards/pyboard/assembler>`__
 -  `uPy Inline Assembler source-code,

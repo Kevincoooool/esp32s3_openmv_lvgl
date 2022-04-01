@@ -13,15 +13,15 @@ UART objects can be created and initialised using::
 
     from pyb import UART
 
-    uart = UART(3, 9600, timeout_char=1000)                         # init with given baudrate
-    uart.init(9600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
+    uart = UART(1, 9600)                         # init with given baudrate
+    uart.init(9600, bits=8, parity=None, stop=1) # init with given parameters
 
 Bits can be 7, 8 or 9.  Parity can be None, 0 (even) or 1 (odd).  Stop can be 1 or 2.
 
 *Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
 only 7 and 8 bits are supported.
 
-A UART object acts like a :std:term:`stream` object and reading and writing is done
+A UART object acts like a `stream` object and reading and writing is done
 using the standard stream methods::
 
     uart.read(10)       # read 10 characters, returns a bytes object
@@ -39,6 +39,7 @@ To check if there is anything to be read, use::
 
     uart.any()          # returns the number of characters waiting
 
+
 *Note:* The stream functions ``read``, ``write``, etc. are new in MicroPython v1.3.4.
 Earlier versions use ``uart.send`` and ``uart.recv``.
 
@@ -47,25 +48,43 @@ Constructors
 
 .. class:: pyb.UART(bus, ...)
 
-   Construct a UART object on the given bus.  ``bus`` can be 1/3.
+   Construct a UART object on the given bus.
+   For Pyboard ``bus`` can be 1-4, 6, 'XA', 'XB', 'YA', or 'YB'.
+   For Pyboard Lite ``bus`` can be 1, 2, 6, 'XB', or 'YA'.
+   For Pyboard D ``bus`` can be 1-4, 'XA', 'YA' or 'YB'.
    With no additional parameters, the UART object is created but not
    initialised (it has the settings from the last initialisation of
    the bus, if any).  If extra arguments are given, the bus is initialised.
    See ``init`` for parameters of initialisation.
 
-   The physical pins of the UART bus are for the OpenMV Cam:
+   The physical pins of the UART buses on Pyboard are:
 
-     - ``UART(3)``: ``(TX, RX) = (P4, P5) = (PB10, PB11)``
+     - ``UART(4)`` is on ``XA``: ``(TX, RX) = (X1, X2) = (PA0, PA1)``
+     - ``UART(1)`` is on ``XB``: ``(TX, RX) = (X9, X10) = (PB6, PB7)``
+     - ``UART(6)`` is on ``YA``: ``(TX, RX) = (Y1, Y2) = (PC6, PC7)``
+     - ``UART(3)`` is on ``YB``: ``(TX, RX) = (Y9, Y10) = (PB10, PB11)``
+     - ``UART(2)`` is on: ``(TX, RX) = (X3, X4) = (PA2, PA3)``
 
-   The physical pins of the UART busses are for the OpenMV Cam M7 and H7:
+   The Pyboard Lite supports UART(1), UART(2) and UART(6) only, pins are:
 
-     - ``UART(1)``: ``(TX, RX) = (P1, P0) = (PB14, PB15)``
-     - ``UART(3)``: ``(TX, RX) = (P4, P5) = (PB10, PB11)``
+     - ``UART(1)`` is on ``XB``: ``(TX, RX) = (X9, X10) = (PB6, PB7)``
+     - ``UART(6)`` is on ``YA``: ``(TX, RX) = (Y1, Y2) = (PC6, PC7)``
+     - ``UART(2)`` is on: ``(TX, RX) = (X1, X2) = (PA2, PA3)``
+
+   The Pyboard D supports UART(1), UART(2), UART(3) and UART(4) only, pins are:
+
+     - ``UART(4)`` is on ``XA``: ``(TX, RX) = (X1, X2) = (PA0, PA1)``
+     - ``UART(1)`` is on ``YA``: ``(TX, RX) = (Y1, Y2) = (PA9, PA10)``
+     - ``UART(3)`` is on ``YB``: ``(TX, RX) = (Y9, Y10) = (PB10, PB11)``
+     - ``UART(2)`` is on: ``(TX, RX) = (X3, X4) = (PA2, PA3)``
+
+   *Note:* Pyboard D has ``UART(1)`` on ``YA``, unlike Pyboard and Pyboard Lite that both
+   have ``UART(1)`` on ``XB`` and ``UART(6)`` on ``YA``.
 
 Methods
 -------
 
-.. method:: UART.init(baudrate, bits=8, parity=None, stop=1, \*, timeout=1000, flow=0, timeout_char=0, read_buf_len=64)
+.. method:: UART.init(baudrate, bits=8, parity=None, stop=1, *, timeout=0, flow=0, timeout_char=0, read_buf_len=64)
 
    Initialise the UART bus with the given parameters:
 
@@ -80,7 +99,11 @@ Methods
      - ``read_buf_len`` is the character length of the read buffer (0 to disable).
 
    This method will raise an exception if the baudrate could not be set within
-   5% of the desired value.
+   5% of the desired value.  The minimum baudrate is dictated by the frequency
+   of the bus that the UART is on; UART(1) and UART(6) are APB2, the rest are on
+   APB1.  The default bus frequencies give a minimum baudrate of 1300 for
+   UART(1) and UART(6) and 650 for the others.  Use :func:`pyb.freq <pyb.freq>`
+   to reduce the bus frequencies to get lower baudrates.
 
    *Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
    only 7 and 8 bits are supported.
@@ -162,9 +185,15 @@ Constants
 Flow Control
 ------------
 
-``UART(3)`` support RTS/CTS hardware flow control using the following pins:
+On Pyboards V1 and V1.1 ``UART(2)`` and ``UART(3)`` support RTS/CTS hardware flow control
+using the following pins:
 
-    - ``UART(3)`` is on :``(TX, RX, nRTS, nCTS) = (P4, P5, P1, P2) = (PB10, PB11, PB14, PB13)``
+    - ``UART(2)`` is on: ``(TX, RX, nRTS, nCTS) = (X3, X4, X2, X1) = (PA2, PA3, PA1, PA0)``
+    - ``UART(3)`` is on :``(TX, RX, nRTS, nCTS) = (Y9, Y10, Y7, Y6) = (PB10, PB11, PB14, PB13)``
+
+On the Pyboard Lite only ``UART(2)`` supports flow control on these pins:
+
+    ``(TX, RX, nRTS, nCTS) = (X1, X2, X4, X3) = (PA2, PA3, PA1, PA0)``
 
 In the following paragraphs the term "target" refers to the device connected to
 the UART.
@@ -175,12 +204,12 @@ When the UART's ``init()`` method is called with ``flow`` set to one or both of
 enabled. To achieve flow control the Pyboard's ``nCTS`` signal should be connected
 to the target's ``nRTS`` and the Pyboard's ``nRTS`` to the target's ``nCTS``.
 
-CTS: target controls OpenMV Cam transmitter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CTS: target controls Pyboard transmitter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If CTS flow control is enabled the write behaviour is as follows:
 
-If the OpenMV Cam's ``UART.write(buf)`` method is called, transmission will stall for
+If the Pyboard's ``UART.write(buf)`` method is called, transmission will stall for
 any periods when ``nCTS`` is ``False``. This will result in a timeout if the entire
 buffer was not transmitted in the timeout period. The method returns the number of
 bytes written, enabling the user to write the remainder of the data if required. In
@@ -191,8 +220,8 @@ If ``UART.writechar()`` is called when ``nCTS`` is ``False`` the method will tim
 out unless the target asserts ``nCTS`` in time. If it times out ``OSError 116``
 will be raised. The character will be transmitted as soon as the target asserts ``nCTS``.
 
-RTS: OpenMV Cam controls target's transmitter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+RTS: Pyboard controls target's transmitter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If RTS flow control is enabled, behaviour is as follows:
 

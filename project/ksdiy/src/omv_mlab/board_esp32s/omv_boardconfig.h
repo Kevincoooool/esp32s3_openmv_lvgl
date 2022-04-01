@@ -72,17 +72,17 @@ extern char unique_id[OMV_UNIQUE_ID_SIZE*4];
 
 
 #define OMV_FB_SIZE             (OMV_RAW_BUF_SIZE)      // FB memory: header + VGA/GS image
-#define OMV_FB_ALLOC_SIZE       (500*1024)      // minimum fb alloc size
+#define OMV_FB_ALLOC_SIZE       (384*1024)      // minimum fb alloc size
 #ifdef OMV_FB_OVERLAY_MEMORY
 #define OMV_FB_ALLOC_OVERLAY_SIZE (384*1024)
 #endif
-#define OMV_STACK_SIZE            (500*1024)
+#define OMV_STACK_SIZE            (384*1024)
 //#define OMV_HEAP_SIZE           (236*1024)
 
 //#define OMV_LINE_BUF_SIZE       (3 * 1024)    // Image line buffer round(640 * 2BPP * 2 buffers).
 //#define OMV_MSC_BUF_SIZE        (2*1024)      // USB MSC bot data
 //#define OMV_VFS_BUF_SIZE        (1*1024)      // VFS sturct + FATFS file buffer (624 bytes)
-#define OMV_JPEG_BUF_SIZE         (500 * 1024)   // IDE JPEG buffer (header + data).
-#define OMV_HEAP_SIZE             (512*1024)
+#define OMV_JPEG_BUF_SIZE         (384 * 1024)   // IDE JPEG buffer (header + data).
+#define OMV_HEAP_SIZE             (384*1024)
 
 #endif //__OMV_BOARDCONFIG_H__

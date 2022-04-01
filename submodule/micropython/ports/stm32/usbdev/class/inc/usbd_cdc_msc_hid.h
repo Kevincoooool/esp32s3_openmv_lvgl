@@ -38,8 +38,8 @@
 #define USBD_MSC_MAX_LUN (2)
 
 // Need to define here for BOT and SCSI layers
-#define MSC_IN_EP     (0x83)
-#define MSC_OUT_EP    (0x03)
+#define MSC_IN_EP     (0x81)
+#define MSC_OUT_EP    (0x01)
 
 struct _usbd_cdc_msc_hid_state_t;
 
@@ -73,7 +73,7 @@ typedef struct {
   uint8_t                  bot_state;
   uint8_t                  bot_status;  
   uint16_t                 bot_data_length;
-  uint8_t                  *bot_data;
+  uint8_t                  bot_data[MSC_MEDIA_PACKET];  
   USBD_MSC_BOT_CBWTypeDef  cbw;
   USBD_MSC_BOT_CSWTypeDef  csw;
   
