@@ -52,7 +52,7 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
         .miso_io_num = BOARD_LCD_MISO,
         .mosi_io_num = BOARD_LCD_MOSI,
         .sclk_io_num = BOARD_LCD_SCK,
-        .max_transfer_sz = 2 * 320 * 240 + 10,
+        .max_transfer_sz = 2 * 240 * 240 + 10,
     };
     spi_bus_handle_t spi_bus = spi_bus_create(SPI2_HOST, &bus_conf);
 
@@ -66,7 +66,9 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
 
     scr_interface_driver_t *iface_drv;
     scr_interface_create(SCREEN_IFACE_SPI, &spi_lcd_cfg, &iface_drv);
-    esp_err_t ret = scr_find_driver(SCREEN_CONTROLLER_ILI9341, &g_lcd);
+    // esp_err_t ret = scr_find_driver(SCREEN_CONTROLLER_ILI9341, &g_lcd);
+        esp_err_t ret = scr_find_driver(SCREEN_CONTROLLER_ST7789, &g_lcd);
+
     if (ESP_OK != ret)
     {
         return ret;
@@ -82,8 +84,8 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
         .offset_hor = 0,
         .offset_ver = 0,
         .width = 240,
-        .height = 320,
-        .rotate = 4,
+        .height = 240,
+        .rotate = 1,
     };
     ret = g_lcd.init(&lcd_cfg);
     if (ESP_OK != ret)
@@ -95,9 +97,9 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
     g_lcd.get_info(&g_lcd_info);
     ESP_LOGI(TAG, "Screen name:%s | width:%d | height:%d", g_lcd_info.name, g_lcd_info.width, g_lcd_info.height);
 
-    // app_lcd_set_color(0x000000);
+    app_lcd_set_color(0xffffff);
     // vTaskDelay(pdMS_TO_TICKS(200));
-    app_lcd_draw_wallpaper();
+    // app_lcd_draw_wallpaper();
     // vTaskDelay(pdMS_TO_TICKS(1000));
 
     // xQueueFrameI = frame_i;

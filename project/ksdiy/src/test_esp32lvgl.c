@@ -31,6 +31,7 @@
 #include "lvgl_helpers.h"
 #include "drv_aw9523b.h"
 #include "drv_nvs.h"
+#include "st7789.h"
 
 #ifndef CONFIG_LV_TFT_DISPLAY_MONOCHROME
     #if defined CONFIG_LV_USE_DEMO_WIDGETS
@@ -151,13 +152,16 @@ static void wait_call(void)
 
 void enable_lcd_backlight(bool backlight)
 {
-    #if defined BOARD_MATATALAB
-    ext_write_digital(LCD_LEDK_PIN, !backlight);
-    #elif defined BOARD_S3_DevKitC
-    //st7789_enable_backlight(true);
-    #elif defined BOARD_MATATALAB_SP4
-    ext_write_digital(LCD_LEDK_PIN, backlight);
-    #endif
+    gpio_pad_select_gpio(GPIO_NUM_48);
+    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_48,1);
+    // #if defined BOARD_MATATALAB
+    // ext_write_digital(LCD_LEDK_PIN, !backlight);
+    // #elif defined BOARD_S3_DevKitC
+    // st7789_enable_backlight(true);
+    // #elif defined BOARD_MATATALAB_SP4
+    // ext_write_digital(LCD_LEDK_PIN, backlight);
+    // #endif
     printf("%s backlight by extgpio.\n", backlight ? "Enabling" : "Disabling");
 }
 
@@ -342,7 +346,10 @@ static void guiStart(void)
 
 static void create_demo_application(void)
 {
-    st7789_enable_backlight(1);
+    gpio_pad_select_gpio(GPIO_NUM_48);
+    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_INPUT);
+    gpio_set_level(GPIO_NUM_48,1);
+    // st7789_enable_backlight(1);
     /* When using a monochrome display we only show "Hello World" centered on the
      * screen */
 #if defined CONFIG_LV_TFT_DISPLAY_MONOCHROME || \

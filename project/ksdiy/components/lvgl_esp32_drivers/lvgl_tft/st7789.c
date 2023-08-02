@@ -129,7 +129,7 @@ void st7789_init(void)
 
 void st7789_enable_backlight(bool backlight)
 {
-#if ST7789_ENABLE_BACKLIGHT_CONTROL
+// #if ST7789_ENABLE_BACKLIGHT_CONTROL
     printf("%s backlight.\n", backlight ? "Enabling" : "Disabling");
     uint32_t tmp = 0;
 
@@ -140,7 +140,7 @@ void st7789_enable_backlight(bool backlight)
 #endif
 
     gpio_set_level(ST7789_BCKL, tmp);
-#endif
+// #endif
 }
 
 /* The ST7789 display controller can drive 320*240 displays, when using a 240*240

@@ -86,6 +86,9 @@ int vprintf_null(const char *format, va_list ap) {
 
 void mp_task(void *pvParameter) {
     volatile uint32_t sp = (uint32_t)get_sp();
+    gpio_pad_select_gpio(GPIO_NUM_48);
+    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_48,1);
     register_lcd(NULL, NULL, false);
     #if MICROPY_PY_THREAD
     mp_thread_init(pxTaskGetStackStart(NULL), MP_TASK_STACK_SIZE / sizeof(uintptr_t));
@@ -184,6 +187,9 @@ soft_reset:
         printf("soft_reset_exit\r\n");
         goto soft_reset_exit;
     }
+    gpio_pad_select_gpio(GPIO_NUM_48);
+    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_NUM_48,1);
  repl_again:
     ESP_LOGD("mp_task", "mp_interrupt_char 0x%X", mp_interrupt_char);
     usbdbg_init();

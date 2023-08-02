@@ -181,8 +181,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(py_lcd_display_obj, 1, py_lcd_display);
 /*Todo: added clear lvgl draw_buf memory here*/
 STATIC mp_obj_t py_lcd_init(uint n_args, const mp_obj_t *args)
 {
-  // bl_intensity = false;
-  // enable_lcd_backlight(bl_intensity);
+  bl_intensity = false;
+  enable_lcd_backlight(bl_intensity);
   register_lcd(NULL, NULL, false);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(py_lcd_init_obj, 0, 1, py_lcd_init);
