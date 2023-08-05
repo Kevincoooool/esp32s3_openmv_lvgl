@@ -4,7 +4,7 @@
 #include "py/runtime.h"
 #include "py/mpstate.h"
 #include "py/nlr.h"
-#include "usb_cdc.h"
+#include "ksdiy_usb_cdc.h"
 
 
 

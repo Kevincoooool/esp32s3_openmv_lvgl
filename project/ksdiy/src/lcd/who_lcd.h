@@ -39,6 +39,8 @@ void screen_display(int x1, int y1, int x2, int y2, uint8_t *rgb565_data);
     void app_lcd_draw_wallpaper();
     void app_lcd_set_color(int color);
 void screen_display_row(int x1, int y1, int x2, int y2, uint8_t *rgb565_data);
+void get_lcd_reslution(uint16_t *p_width, uint16_t *p_height);
+
 #ifdef __cplusplus
 }
 #endif

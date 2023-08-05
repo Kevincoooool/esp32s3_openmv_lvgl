@@ -59,7 +59,7 @@
 #include "shared/readline/readline.h"
 #include "uart.h"
 #include "uart1.h"
-#include "usb_cdc.h"
+#include "ksdiy_usb_cdc.h"
 #include "modmachine.h"
 #include "modnetwork.h"
 #include "mpthreadport.h"
@@ -94,9 +94,10 @@ void mp_task(void *pvParameter) {
     mp_thread_init(pxTaskGetStackStart(NULL), MP_TASK_STACK_SIZE / sizeof(uintptr_t));
     #endif
     // #if CONFIG_USB_ENABLED
-    usb_cdc_init();
+    // usb_cdc_init();
     // usb_msc_init();
     // #endif
+    cdc_acm_init00();
     uart_init();
     
     machine_init();

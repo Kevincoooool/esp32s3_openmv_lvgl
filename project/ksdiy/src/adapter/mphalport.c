@@ -53,7 +53,7 @@
 #include "shared/runtime/pyexec.h"
 #include "mphalport.h"
 //#include "usb.h"
-#include "usb_cdc.h"
+#include "ksdiy_usb_cdc.h"
 
 //#undef CONFIG_USB_ENABLED
 //#define CONFIG_USB_ENABLED    0

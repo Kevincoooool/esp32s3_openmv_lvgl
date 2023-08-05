@@ -271,6 +271,7 @@ esp_err_t lcd_st7789_set_window(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t 
 {
     LCD_CHECK((x1 < g_lcd_handle.width) && (y1 < g_lcd_handle.height), "The set coordinates exceed the screen size", ESP_ERR_INVALID_ARG);
     LCD_CHECK((x0 <= x1) && (y0 <= y1), "Window coordinates invalid", ESP_ERR_INVALID_ARG);
+
     esp_err_t ret = ESP_OK;
     scr_utility_apply_offset(&g_lcd_handle, ST7789_RESOLUTION_HOR, ST7789_RESOLUTION_VER, &x0, &y0, &x1, &y1);
 

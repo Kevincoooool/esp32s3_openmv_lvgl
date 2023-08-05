@@ -81,9 +81,9 @@ set(OMV_MOD_SRCS
 )
 
 list(APPEND OMV_SRCS "${OMV_MOD_SRCS}")
-if(CONFIG_USB_ENABLED)
+# if(CONFIG_USB_ENABLED)
 list(APPEND OMV_SRCS ${PROJECT_DIR}/src/omv_mlab/srcs/usbdbg.c)
-endif()
+# endif()
 
 set(OMV_INCLUDEDIRS
   ${PROJECT_DIR}/src/omv_mlab/inc

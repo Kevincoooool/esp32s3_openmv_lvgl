@@ -39,12 +39,13 @@ static void task_process_handler(void *arg)
 }
 void screen_display(int x1, int y1, int x2, int y2, uint8_t *rgb565_data)
 {
-     g_lcd.draw_bitmap(x1, y1, x2, y2, (uint16_t *)rgb565_data);
+
+    g_lcd.draw_bitmap(x1, y1, x2, y2, (uint16_t *)rgb565_data);
 }
 void screen_display_row(int x1, int y1, int x2, int y2, uint8_t *rgb565_data)
 {
 
-     g_lcd.draw_row_bitmap(x1, y1, x2, y2, (uint16_t *)rgb565_data);
+    g_lcd.draw_row_bitmap(x1, y1, x2, y2, (uint16_t *)rgb565_data);
 }
 esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o, const bool return_fb)
 {
@@ -60,7 +61,7 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
         .spi_bus = spi_bus,
         .pin_num_cs = BOARD_LCD_CS,
         .pin_num_dc = BOARD_LCD_DC,
-        .clk_freq = 60 * 1000000,
+        .clk_freq = 80 * 1000000,
         .swap_data = 0,
     };
 
@@ -85,7 +86,7 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
         .offset_ver = 0,
         .width = 240,
         .height = 240,
-        .rotate = 1,
+        .rotate = 0,
     };
     ret = g_lcd.init(&lcd_cfg);
     if (ESP_OK != ret)
@@ -99,7 +100,7 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
 
     app_lcd_set_color(0xffffff);
     // vTaskDelay(pdMS_TO_TICKS(200));
-    // app_lcd_draw_wallpaper();
+    app_lcd_draw_wallpaper();
     // vTaskDelay(pdMS_TO_TICKS(1000));
 
     // xQueueFrameI = frame_i;
@@ -115,14 +116,16 @@ void app_lcd_draw_wallpaper()
     scr_info_t lcd_info;
     g_lcd.get_info(&lcd_info);
 
-    uint16_t *pixels = (uint16_t *)heap_caps_malloc((320 * 240) * sizeof(uint16_t), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    uint16_t *pixels = (uint16_t *)heap_caps_malloc((240 * 240) * sizeof(uint16_t), MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     if (NULL == pixels)
     {
         ESP_LOGE(TAG, "Memory for bitmap is not enough");
         return;
     }
-    memcpy(pixels, logo_ksdiy, (320 * 240) * sizeof(uint16_t));
-    g_lcd.draw_bitmap(0, 0, 320, 240, (uint16_t *)pixels);
+        memcpy(pixels, logo_en_240x240_lcd, (240 * 240) * sizeof(uint16_t));
+
+    // memcpy(pixels, logo_ksdiy, (240 * 240) * sizeof(uint16_t));
+    g_lcd.draw_bitmap(0, 0, 240, 240, (uint16_t *)pixels);
     heap_caps_free(pixels);
 }
 
@@ -149,4 +152,9 @@ void app_lcd_set_color(int color)
 
         free(buffer);
     }
+}
+void get_lcd_reslution(uint16_t *p_width, uint16_t *p_height)
+{
+    *p_width = 240;
+    *p_height = 240; 
 }

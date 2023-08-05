@@ -35,7 +35,7 @@
 
 #define CDC_ITF TINYUSB_CDC_ACM_0
 
-static uint8_t usb_rx_buf[CONFIG_USB_CDC_RX_BUFSIZE];
+static uint8_t usb_rx_buf[4096];
 
 static void usb_callback_rx(int itf, cdcacm_event_t *event) {
     // TODO: what happens if more chars come in during this function, are they lost?
@@ -69,7 +69,7 @@ void usb_cdc_init(void) {
     tinyusb_config_cdcacm_t amc_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = CDC_ITF,
-        .rx_unread_buf_sz = 256,
+        .rx_unread_buf_sz = 4096,
         .callback_rx = &usb_callback_rx,
         .callback_rx_wanted_char = NULL,
         .callback_line_state_changed = NULL,

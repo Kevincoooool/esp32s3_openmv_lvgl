@@ -7,7 +7,7 @@
 // ARM Cortex-M4/M7 Processors can access memory using unaligned 32-bit reads/writes.
 void *unaligned_memcpy(void *dest, void *src, size_t n)
 {
-    printf("unaligned_memcpy %p %p, length %d\n", dest, src, n);
+    // printf("unaligned_memcpy %p %p, length %d\n", dest, src, n);
 #if (CPU == cortex - m4) || (CPU == cortex - m7)
     // TODO: Make this faster using only 32-bit aligned reads/writes with data shifting.
     uint32_t *dest32 = (uint32_t *)dest;

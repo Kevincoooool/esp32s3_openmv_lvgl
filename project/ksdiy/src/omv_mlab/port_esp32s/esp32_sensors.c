@@ -84,7 +84,7 @@ static camera_config_t camera_config = {
     .pin_pclk = CAM_PIN_PCLK,
 
     //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
-    .xclk_freq_hz = 20000000,
+    .xclk_freq_hz = 24000000,
     .ledc_timer = LEDC_TIMER_0,
     .ledc_channel = LEDC_CHANNEL_0,
    .fb_location = CAMERA_FB_IN_PSRAM,//存放在外部PSRAM中
@@ -93,7 +93,7 @@ static camera_config_t camera_config = {
     .frame_size = FRAMESIZE_QVGA,     //QQVGA-UXGA Do not use sizes above QVGA when not JPEG
                                       //     .frame_size = FRAMESIZE_240X240,
     .jpeg_quality = 12,               //0-63 lower number means higher quality
-    .fb_count = 1,                    //if more than one, i2s runs in continuous mode. Use only with JPEG
+    .fb_count = 5,                    //if more than one, i2s runs in continuous mode. Use only with JPEG
     .grab_mode = CAMERA_GRAB_WHEN_EMPTY};//CAMERA_GRAB_LATEST  CAMERA_GRAB_WHEN_EMPTY
 
 
@@ -146,12 +146,14 @@ static int omv_set_framesize(omv_sensor_t *sensor, omv_framesize_t _framesize)
     FSOMV2ESP32(FRAMESIZE_QQVGA)
     FSOMV2ESP32(FRAMESIZE_QCIF)
     FSOMV2ESP32(FRAMESIZE_HQVGA)
+    FSOMV2ESP32(FRAMESIZE_240X240)
     FSOMV2ESP32(FRAMESIZE_QVGA)
     FSOMV2ESP32(FRAMESIZE_CIF)
     FSOMV2ESP32(FRAMESIZE_VGA)
     FSOMV2ESP32(FRAMESIZE_SVGA)
     FSOMV2ESP32(FRAMESIZE_XGA)
     FSOMV2ESP32(FRAMESIZE_HD)
+    FSOMV2ESP32(FRAMESIZE_FHD)
     FSOMV2ESP32(FRAMESIZE_SXGA)
     FSOMV2ESP32(FRAMESIZE_UXGA)
     default: ESP_LOGE(TAG, "invalid framesize 0x%X\n", _framesize); return -1;

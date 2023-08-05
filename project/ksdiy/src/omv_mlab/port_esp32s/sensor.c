@@ -15,6 +15,7 @@
 #include "framebuffer.h"
 #include "unaligned_memcpy.h"
 #include "omv_boardconfig.h"
+#include "ksdiy_usb_cdc.h"
 // #include "sccb.h"
 char unique_id[OMV_UNIQUE_ID_SIZE * 4];
 
@@ -32,6 +33,7 @@ const int omv_resolution[][2] = {
     {80, 60},   /* QQQVGA    */
     {96, 96},   /* 96X96    */
     {160, 120}, /* QQVGA     */
+    {240, 240},   /* ESPEYE    */
     {320, 240}, /* QVGA      */
     {640, 480}, /* VGA       */
     {60, 40},   /* HQQQVGA   */
@@ -788,13 +790,14 @@ int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
     case OMV_PIXFORMAT_RGB565:
     {
         MAIN_FB()->bpp = 2;
-        for (int i = 0; i < pic->len; i += 2)
-        {
-            uint8_t temp = 0;
-            temp = buffer->data[i];
-            buffer->data[i] = buffer->data[i + 1];
-            buffer->data[i + 1] = temp;
-        }
+        // for (int i = 0; i < pic->len; i += 2)
+        // {
+        //     uint8_t temp = 0;
+        //     temp = buffer->data[i];
+        //     buffer->data[i] = buffer->data[i + 1];
+        //     buffer->data[i + 1] = temp;
+        // }
+
         /*
             for(int i = 0; i < pic->len; i+=2){
                 uint8_t temp = 0;

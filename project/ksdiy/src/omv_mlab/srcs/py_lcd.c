@@ -19,7 +19,7 @@ extern void lcd_driver_flush(int x1, int y1, int x2, int y2, uint8_t *rgb565_dat
 extern void enable_lcd_backlight(bool backlight);
 uint16_t *colors = NULL;
 static bool bl_intensity;
-static uint16_t lcd_width = 320, lcd_height = 240, lcd_row_cnt = 0;
+static uint16_t lcd_width = 240, lcd_height = 240, lcd_row_cnt = 0;
 static uint16_t cb_lcd_width = 0, cb_lcd_height = 0;
 #define debug(fmt, ...) \
   if (0)                \
@@ -170,6 +170,8 @@ STATIC mp_obj_t py_lcd_display(uint n_args, const mp_obj_t *args, mp_map_t *kw_a
   }
   else
   {
+        // screen_display(x0, y0, x1, y1, dst_img.data);
+
       screen_display(x0, y0, src_img->w, src_img->h, src_img->data);
   }
 

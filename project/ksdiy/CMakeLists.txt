@@ -33,4 +33,5 @@ configure_file(${CMAKE_BINARY_DIR}/sdkconfig.combined.in ${CMAKE_BINARY_DIR}/sdk
 set(SDKCONFIG_DEFAULTS ${CMAKE_BINARY_DIR}/sdkconfig.combined)
 # Include main IDF cmake file and define the project.
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+add_definitions(-w)
 project(micropython)

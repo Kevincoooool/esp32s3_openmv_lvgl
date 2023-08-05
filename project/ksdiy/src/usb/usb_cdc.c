@@ -35,19 +35,21 @@
 #include "esp_task.h"
 #include "py/mpthread.h"
 
-#include "tusb.h"
-#include "usb_cdc.h"
+// #include "tusb.h"
+#include "ksdiy_usb_cdc.h"
 #include "tinyusb.h"
 #include "esp_log.h"
 #include "tusb_msc.h"
 #include "lib/oofatfs/ff.h"
 #include "lib/oofatfs/diskio.h"
 #include "extmod/vfs_fat.h"
+#include "tusb.h"
+
 #if CONFIG_USB_ENABLED
 #define DBG_MAX_PACKET      (64)
 #define IDE_BAUDRATE_SLOW   (921600)
 #define IDE_BAUDRATE_FAST   (12000000)
-
+#define CONFIG_USB_CDC_RX_BUFSIZE 4096
 // MicroPython runs as a task under FreeRTOS
 #define USB_CDC_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 10)
 #define USB_CDC_TASK_STACK_SIZE      (16 * 1024)
@@ -64,8 +66,8 @@ extern void usbdbg_data_in(void *buffer, int length);
 extern void usbdbg_data_out(void *buffer, int length);
 extern void usbdbg_control(void *buffer, uint8_t brequest, uint32_t wlength);
 //  uint8_t *tx_ringbuf_array=NULL;
- uint8_t tx_ringbuf_array[1024*100];
-volatile ringbuf_t tx_ringbuf;
+ uint8_t tx_ringbuf_array[1024*200];
+    volatile ringbuf_t tx_ringbuf;
 
 uint32_t usb_cdc_buf_len()
 {
@@ -95,7 +97,8 @@ void cdc_task_serial_mode(void)
             uint32_t len = tud_cdc_read(usb_rx_buf, CONFIG_USB_CDC_RX_BUFSIZE);
             for (int i = 0; i < len; i++) {
                 if (usb_rx_buf[i] == mp_interrupt_char) {
-                    debug("keyboard_interrupt. ");mp_sched_keyboard_interrupt();
+                    debug("keyboard_interrupt. ");
+                    mp_sched_keyboard_interrupt();
                 } else {
                     ringbuf_put(&stdin_ringbuf, usb_rx_buf[i]);
                 }
@@ -111,24 +114,19 @@ void cdc_task_serial_mode(void)
 }
 
 #define CDC_WRDAT(w_buf, w_len) do {  \
-  int pos = 0, left = w_len;  \
-  while(left > 0) { \
-    int count = tud_cdc_write(&w_buf[pos], left); \
-    pos+=count; \
-    left = w_len-pos; \
-  } \
-  tud_cdc_write_flush();  \
+     tud_cdc_write(w_buf, w_len); \
 } while(0)
 
 void usb_tx_strn(const char *str, size_t len) {
     debug("usb_tx_strn %d bytes\n", len);
     if(dbg_mode_enabled == false) {
-      CDC_WRDAT(str, len);vTaskDelay(pdMS_TO_TICKS(10));
+      CDC_WRDAT(str, len);
+      vTaskDelay(pdMS_TO_TICKS(1));
     } else {
        for (int i=0;i<len;i++) {
         while(ringbuf_put(&tx_ringbuf, (uint8_t )str[i]) < 0) {
           printf("Error: usb_cdc tx_ringbuf overflow!\n");
-          vTaskDelay(pdMS_TO_TICKS(5));
+          vTaskDelay(pdMS_TO_TICKS(1));
         }
       }
     }	  

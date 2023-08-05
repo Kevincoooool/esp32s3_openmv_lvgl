@@ -165,11 +165,11 @@ void enable_lcd_backlight(bool backlight)
     printf("%s backlight by extgpio.\n", backlight ? "Enabling" : "Disabling");
 }
 
-void get_lcd_reslution(uint16_t *p_width, uint16_t *p_height)
-{
-  *p_width = disp_drv.hor_res;
-  *p_height = disp_drv.ver_res;
-}
+// void get_lcd_reslution(uint16_t *p_width, uint16_t *p_height)
+// {
+//   *p_width = disp_drv.hor_res;
+//   *p_height = disp_drv.ver_res;
+// }
 
 #define LINES_ONCE  (DISP_BUF_SIZE/LV_HOR_RES_MAX)
 void lcd_driver_flush(int x1, int y1, int x2, int y2, uint8_t *rgb565_data)

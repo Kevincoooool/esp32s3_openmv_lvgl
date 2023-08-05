@@ -21,8 +21,8 @@
 // #include "pendsv.h"
 
 #include "imlib.h"
-#include "usb_cdc.h"
-#include "device/dcd.h"
+#include "ksdiy_usb_cdc.h"
+// #include "device/dcd.h"
 #if MICROPY_PY_SENSOR
 // #include "cambus.h"
 #include "sensor.h"
@@ -87,9 +87,9 @@ bool usbdbg_handle_script_status(void)
 inline void usbdbg_set_irq_enabled(bool enabled)
 {
     if (enabled) {
-        dcd_int_enable(0);
+        // dcd_int_enable(0);
     } else {
-        dcd_int_disable(0);
+        // dcd_int_disable(0);
     }
 }
 
@@ -209,7 +209,7 @@ void usbdbg_data_in(void *buffer, int length)
 void usbdbg_data_out(void *buffer, int length)
 {
     ESP_LOGD("usbdbg", "usbdbg_data_out(%d)", cmd);
-    fflush(stdout);
+    // fflush(stdout);
     switch (cmd) {
         case USBDBG_FB_ENABLE: {
             uint32_t enable = *((int32_t*)buffer);

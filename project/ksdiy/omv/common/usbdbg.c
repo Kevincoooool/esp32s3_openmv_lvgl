@@ -21,7 +21,7 @@
 // #include "pendsv.h"
 
 #include "imlib.h"
-#include "usb_cdc.h"
+#include "ksdiy_usb_cdc.h"
 #include "device/dcd.h"
 #if MICROPY_PY_SENSOR
 #include "cambus.h"
@@ -88,7 +88,7 @@ inline void usbdbg_set_irq_enabled(bool enabled)
 
 void usbdbg_data_in(void *buffer, int length)
 {
-    ESP_LOGD("usbdbg", "usbdbg_data_in(%d)", cmd);
+    ESP_LOGE("usbdbg", "usbdbg_data_in(%d)", cmd);
     switch (cmd) {
         case USBDBG_FW_VERSION: {
             uint32_t *ver_buf = buffer;
