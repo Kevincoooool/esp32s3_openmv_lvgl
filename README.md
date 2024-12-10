@@ -4,13 +4,15 @@
 
 ## 1. 需要在Ubuntu下安装 ESP-IDF 依赖环境 ##
    当前验证过的环境：
-   `idf: release v4.4`
+   `idf: release v4.4.8`
 
 ## 2. 克隆工程 ##
 
    本工程代码使用submodule来管理openmv和micropython的官方代码，clone 本工程时:
 
    `git clone https://github.com/Kevincoooool/esp32s3_openmv_lvgl/`
+   `cd esp32s3_openmv_lvgl`
+   `git submodule update --init --recursive`
 
 ## 3. 编译工程 ##
 
