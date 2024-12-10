@@ -31,7 +31,8 @@ set(OMV_SRCS
   ${OPENMV_DIR}/src/omv/imlib/filter.c                    
   ${PROJECT_DIR}/src/omv_mlab/srcs/fmath.c                     
   ${OPENMV_DIR}/src/omv/imlib/font.c                      
-  ${PROJECT_DIR}/src/omv_mlab/srcs/framebuffer.c               
+  ${PROJECT_DIR}/src/omv_mlab/srcs/framebuffer.c   
+  ${PROJECT_DIR}/src/omv_mlab/srcs/rgb_table.c
   ${OPENMV_DIR}/src/omv/imlib/fsort.c                     
   ${OPENMV_DIR}/src/omv/imlib/gif.c                       
   ${OPENMV_DIR}/src/omv/imlib/haar.c                      
@@ -93,5 +94,6 @@ set(OMV_INCLUDEDIRS
   ${OPENMV_DIR}/src/omv/imlib
   ${OPENMV_DIR}/src/omv/modules  
   ${MICROPY_DIR}/lib/oofatfs
+  ${MICROPY_DIR}
 )
 endif()

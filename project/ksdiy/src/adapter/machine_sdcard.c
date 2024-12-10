@@ -231,9 +231,9 @@ STATIC mp_obj_t machine_sdcard_make_new(const mp_obj_type_t *type, size_t n_args
     // On chips where the GPIOs used for SD card can be configured, set them in
     // the slot_config structure:
 //#ifdef SOC_SDMMC_USE_GPIO_MATRIX
-    slot_config.clk = GPIO_NUM_15;
-    slot_config.cmd = GPIO_NUM_7;
-    slot_config.d0 = GPIO_NUM_4;
+    slot_config.clk = GPIO_NUM_39;
+    slot_config.cmd = GPIO_NUM_38;
+    slot_config.d0 = GPIO_NUM_40;
     //slot_config.d1 = GPIO_NUM_4;
     //slot_config.d2 = GPIO_NUM_12;
     //slot_config.d3 = GPIO_NUM_13;

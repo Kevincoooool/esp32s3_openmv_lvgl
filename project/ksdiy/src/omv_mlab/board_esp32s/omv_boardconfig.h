@@ -17,8 +17,8 @@
 //#define omv_malloc(size)  heap_caps_malloc(size, MALLOC_CAP_SPIRAM|MALLOC_CAP_32BIT|MALLOC_CAP_DMA)
 
 // Architecture info
-#define OMV_ARCH_STR            "OMV4 esp32s 1024" // 33 chars max
-#define OMV_BOARD_TYPE          "esp32s3_ksdiy"
+#define OMV_ARCH_STR            "KSDIY ESP32S3 OPENMV" // 33 chars max
+#define OMV_BOARD_TYPE          "KSDIY ESP32S3"
 #define OMV_UNIQUE_ID_ADDR      &unique_id[0]
 #define OMV_UNIQUE_ID_SIZE      3 // 3 words
 
@@ -42,7 +42,7 @@ extern char unique_id[OMV_UNIQUE_ID_SIZE*4];
 #define OMV_XCLK_FREQUENCY      (24000000)
 
 // RAW buffer size
-#define OMV_RAW_BUF_SIZE        (640*480*3)
+#define OMV_RAW_BUF_SIZE        (1920*1080*2)
 
 // Enable hardware JPEG
 #define OMV_HARDWARE_JPEG       (0)
@@ -70,9 +70,8 @@ extern char unique_id[OMV_UNIQUE_ID_SIZE*4];
 // USB IRQn.
 //#define OMV_USB_IRQN            (OTG_FS_IRQn)
 
-
-#define OMV_FB_SIZE             (OMV_RAW_BUF_SIZE)      // FB memory: header + VGA/GS image
-#define OMV_FB_ALLOC_SIZE       (384*1024)      // minimum fb alloc size
+#define OMV_FB_ALLOC_SIZE       (32*1024)      // minimum fb alloc size
+#define OMV_FB_SIZE             (OMV_RAW_BUF_SIZE+OMV_FB_ALLOC_SIZE)      // FB memory: header + VGA/GS image
 #ifdef OMV_FB_OVERLAY_MEMORY
 #define OMV_FB_ALLOC_OVERLAY_SIZE (384*1024)
 #endif

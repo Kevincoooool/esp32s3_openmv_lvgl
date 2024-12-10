@@ -1,9 +1,45 @@
 dependencies:
+  espressif/esp-dl:
+    component_hash: 52257413d97b48f368ae4b5dd0487a809df64ccbc30e52e2ea1987016a959058
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.1.0
+  espressif/esp-dsp:
+    component_hash: 3e7bbd487f1357a1d4944d0c85966d049501ea281b8a4c7f93f7cfedd5b7f23d
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.4.12
+  espressif/esp-sr:
+    component_hash: 4aff7847709bd996ea8c381b794fe44a9db9fb5050684dc5715de07331eb70bc
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.9.2
+  espressif/esp32-camera:
+    component_hash: c3eb05fbeeae884a23bed9b17d48d5f0da8872beadae0c0e747d2fbea6094f06
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 2.0.15
+  espressif/esp_lcd_touch:
+    component_hash: 779b4ba2464a3ae85681e4b860caa5fdc35801458c23f3039ee761bae7f442a4
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.1.2
+  espressif/esp_lcd_touch_cst816s:
+    component_hash: a29d2bed4d08edcb54e48da0383aebac88aa88325002273c534323a573e204ca
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 1.0.3~1
   idf:
     component_hash: null
     source:
       type: idf
-    version: 4.4.2
-manifest_hash: 5b6d94f9085756f0703cc65d709d73d69fa57edcd71015b3a2e016e7313897fc
+    version: 4.4.8
+manifest_hash: ea0df9cbda17452461fe01dfc5ecd78372cf4f5bb374b7d379ea3038e1be6819
 target: esp32s3
 version: 1.0.0

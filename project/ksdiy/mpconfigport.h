@@ -155,8 +155,8 @@
 #define MICROPY_PY_MACHINE_I2C              (1)
 #define MICROPY_PY_MACHINE_SOFTI2C          (1)
 #define MICROPY_PY_MACHINE_SPI              (1)
-#define MICROPY_PY_MACHINE_SPI_MSB          (0)
-#define MICROPY_PY_MACHINE_SPI_LSB          (1)
+#define MICROPY_PY_MACHINE_SPI_MSB          (1)
+#define MICROPY_PY_MACHINE_SPI_LSB          (0)
 #define MICROPY_PY_MACHINE_SOFTSPI          (1)
 
 #ifndef MICROPY_HW_ENABLE_SDCARD
@@ -224,7 +224,7 @@ extern const struct _mp_obj_module_t image_module;
 extern const struct _mp_obj_module_t gif_module;
 extern const struct _mp_obj_module_t mjpeg_module;
 extern const struct _mp_obj_module_t cpufreq_module;
-//extern const struct _mp_obj_module_t tf_module;
+extern const struct _mp_obj_module_t tf_module;
 //extern const struct _mp_obj_module_t fir_module;
 extern const struct _mp_obj_module_t lcd_module;
 #define OMV_BUILTIN_MODULES   { MP_OBJ_NEW_QSTR(MP_QSTR_omv),     (mp_obj_t)&omv_module }, \

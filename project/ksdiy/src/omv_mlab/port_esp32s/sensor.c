@@ -16,6 +16,8 @@
 #include "unaligned_memcpy.h"
 #include "omv_boardconfig.h"
 #include "ksdiy_usb_cdc.h"
+#include "who_lcd.h"
+
 // #include "sccb.h"
 char unique_id[OMV_UNIQUE_ID_SIZE * 4];
 
@@ -24,7 +26,7 @@ const int omv_resolution[][2] = {
     // C/SIF Resolutions
     {88, 72},   /* QQCIF     */
     {176, 144}, /* QCIF      */
-    {352, 288}, /* CIF       */
+    {400, 296}, /* CIF       *///esp32 使用
     {88, 60},   /* QQSIF     */
     {176, 120}, /* QSIF      */
     {352, 240}, /* SIF       */
@@ -33,8 +35,9 @@ const int omv_resolution[][2] = {
     {80, 60},   /* QQQVGA    */
     {96, 96},   /* 96X96    */
     {160, 120}, /* QQVGA     */
-    {240, 240},   /* ESPEYE    */
+    {240, 240},   /* ESPEYE   */
     {320, 240}, /* QVGA      */
+    {480, 320}, /* HVGA      */
     {640, 480}, /* VGA       */
     {60, 40},   /* HQQQVGA   */
     {120, 80},  /* HQQVGA    */
@@ -44,6 +47,7 @@ const int omv_resolution[][2] = {
     {64, 64},   /* 64x64     */
     {128, 64},  /* 128x64    */
     {128, 128}, /* 128x128   */
+    {320, 320}, /* 320x320   */
     // Other
     {128, 160},   /* LCD       */
     {128, 160},   /* QQVGA2    */
@@ -64,6 +68,7 @@ const int omv_resolution[][2] = {
 #include "esp32_sensors.c"
 omv_sensor_t sensor = {0};
 static bool need_reinit = true;
+static bool set_window_mark=false;
 
 int sensor_init()
 {
@@ -133,6 +138,7 @@ int sensor_reset()
     }
     camera_subpart_deinit();
     need_reinit = true;
+	set_window_mark=false;
 
     return 0;
 }
@@ -147,20 +153,31 @@ int sensor_reset()
 #include "driver/i2c.h"
 int sensor_get_id()
 {
-
+	int sensor_id=0;
     sensor_t *esp_sensor = esp_camera_sensor_get();
-
-    return esp_sensor->id.PID;
+	if(NULL==esp_sensor)
+	{
+		return -1;
+	}
+	sensor_id=esp_sensor->id.PID;
+	if(sensor_id>0xff)
+	{
+		sensor_id=sensor_id>>8;
+	}
+    return sensor_id;
+	//return sensor.chip_id;
 }
 
 bool sensor_is_detected()
 {
-
+/*
     sensor_t *esp_sensor = esp_camera_sensor_get();
     if (esp_sensor)
         return sensor.detected;
     else
         return 0;
+*/
+	return sensor.detected;
 }
 
 int sensor_sleep(int enable)
@@ -205,16 +222,16 @@ int sensor_shutdown(int enable)
 
 int sensor_read_reg(uint16_t reg_addr)
 {
-    sensor_t *esp_sensor = esp_camera_sensor_get();
-
-    return esp_sensor->get_reg(esp_sensor, reg_addr, ~0U);
+    //sensor_t *esp_sensor = esp_camera_sensor_get();
+    //return esp_sensor->get_reg(esp_sensor, reg_addr, ~0U);
+    return sensor.read_reg(&sensor,reg_addr);
 }
 
 int sensor_write_reg(uint16_t reg_addr, uint16_t reg_data)
 {
-    sensor_t *esp_sensor = esp_camera_sensor_get();
-
-    return esp_sensor->set_reg(esp_sensor, reg_addr, ~0U, reg_data);
+    //sensor_t *esp_sensor = esp_camera_sensor_get();
+    //return esp_sensor->set_reg(esp_sensor, reg_addr, ~0U, reg_data);
+    return sensor.write_reg(&sensor,reg_addr,reg_data);
 }
 
 int sensor_set_pixformat(omv_pixformat_t pixformat)
@@ -291,7 +308,7 @@ int sensor_set_framesize(omv_framesize_t framesize)
     MAIN_FB()->y = 0;
     MAIN_FB()->w = MAIN_FB()->u = omv_resolution[framesize][0];
     MAIN_FB()->h = MAIN_FB()->v = omv_resolution[framesize][1];
-
+	
     return 0;
 }
 
@@ -328,7 +345,7 @@ int sensor_set_windowing(int x, int y, int w, int h)
     MAIN_FB()->y = (y / 2) * 2;
     MAIN_FB()->w = MAIN_FB()->u = (w / 2) * 2;
     MAIN_FB()->h = MAIN_FB()->v = (h / 2) * 2;
-
+	set_window_mark=true;
     return 0;
 }
 
@@ -473,16 +490,16 @@ int sensor_set_hmirror(int enable)
         /* no change */
         return 0;
     }
+    sensor.hmirror = enable;
 
     // /* call the sensor specific function */
-    // if (sensor.set_hmirror == NULL || sensor.set_hmirror(&sensor, enable) != 0)
-    // {
-    //     /* operation not supported */
-    //     return -1;
-    // }
-    sensor.hmirror = enable;
-    sensor_t *esp_sensor = esp_camera_sensor_get();
-    esp_sensor->set_hmirror(esp_sensor,enable);
+     if (sensor.set_hmirror == NULL || sensor.set_hmirror(&sensor, enable) != 0)
+     {
+         /* operation not supported */
+         return -1;
+     }
+    //sensor_t *esp_sensor = esp_camera_sensor_get();
+    //esp_sensor->set_hmirror(esp_sensor,enable);
     mp_hal_delay_ms(100); // wait for the camera to settle
     return 0;
 }
@@ -501,14 +518,14 @@ int sensor_set_vflip(int enable)
     }
 
     /* call the sensor specific function */
-    // if (sensor.set_vflip == NULL || sensor.set_vflip(&sensor, enable) != 0)
-    // {
-    //     /* operation not supported */
-    //     return -1;
-    // }
+     if (sensor.set_vflip == NULL || sensor.set_vflip(&sensor, enable) != 0)
+     {
+         /* operation not supported */
+         return -1;
+     }
     sensor.vflip = enable;
-    sensor_t *esp_sensor = esp_camera_sensor_get();
-    esp_sensor->set_vflip(esp_sensor,enable);
+    //sensor_t *esp_sensor = esp_camera_sensor_get();
+    //esp_sensor->set_vflip(esp_sensor,enable);
     mp_hal_delay_ms(100); // wait for the camera to settle
     return 0;
 }
@@ -750,8 +767,81 @@ void sensor_check_buffsize()
     }
 }
 
+
+void IRAM_ATTR memcpy_rev16(omv_sensor_t *sensor,vbuffer_t *buffer, camera_fb_t *pic)
+{
+
+	if (OMV_PIXFORMAT_YUV422==sensor->pixformat || OMV_PIXFORMAT_RGB565==sensor->pixformat)
+	{
+		uint8_t* pdst= buffer->data;	
+		for(int i=0;i<pic->height;i++)
+		{
+			uint8_t* psrc=pic->buf+i*pic->width*2;
+			for(int j=0;j<pic->width*2;j+=2)
+			{
+				*pdst=*(psrc+j+1);
+				*(pdst+1)=*(psrc+j);
+				pdst+=2;
+			}
+		}
+	}
+	else
+	{
+		memcpy(buffer->data, pic->buf, pic->len);
+	}
+    return;
+}
+
+int IRAM_ATTR sensor_set_window(omv_sensor_t *sensor,vbuffer_t *buffer,camera_fb_t *fb)
+{
+	if(NULL == fb)
+	{
+		//ESP_LOGI("camera fb error");
+		return -1;
+	}
+	uint8_t* pdata=buffer->data;
+	
+	switch (sensor->pixformat)
+	{
+		case OMV_PIXFORMAT_GRAYSCALE:
+			for(int i=MAIN_FB()->y;i<MAIN_FB()->y+MAIN_FB()->h;i++)
+			{
+				for(int j=MAIN_FB()->x;j<MAIN_FB()->x+MAIN_FB()->w;j++)
+				{
+					*pdata=fb->buf[i*fb->width+j];
+					 pdata++;
+				}
+			}
+			break;
+		case OMV_PIXFORMAT_YUV422:
+		case OMV_PIXFORMAT_RGB565:
+		{
+			for(int i=MAIN_FB()->y;i<MAIN_FB()->y+MAIN_FB()->h;i++)
+			{
+				for(int j=MAIN_FB()->x*2;j<(MAIN_FB()->x+MAIN_FB()->w)*2;j+=2)
+				{
+					*pdata=fb->buf[i*fb->width*2+j+1];
+					*(pdata+1)=fb->buf[i*fb->width*2+j];
+					 pdata+=2;
+				}
+			}
+			break;
+		}
+		case OMV_PIXFORMAT_JPEG:
+		{
+			memcpy(buffer->data, fb->buf, fb->len);
+			break;
+		}
+		default:
+			//ESP_LOGI("sensor pixformat not support set_window");
+			return 0;
+	}
+	return 0;
+}
+
+
 // This is the default snapshot function, which can be replaced in sensor_init functions.
-int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
+int IRAM_ATTR sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
 {
     // Compress the framebuffer for the IDE preview, only if it's not the first frame,
     // the framebuffer is enabled and the image sensor does not support JPEG encoding.
@@ -766,7 +856,6 @@ int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
         framebuffer_update_jpeg_buffer();
     framebuffer_free_current_buffer();
     vbuffer_t *buffer = framebuffer_get_tail(FB_NO_FLAGS);
-
     if (!buffer)
     {
         ESP_LOGI(TAG, "no buffer get failed");
@@ -774,51 +863,37 @@ int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
     }
 
     ESP_LOGD(TAG, "Taking picture...");
-    camera_fb_t *pic = esp_camera_fb_get();
-    memcpy(buffer->data, pic->buf, pic->len);
-    esp_camera_fb_return(pic);
-    // use pic->buf to access the image
-    // ESP_LOGI(TAG, "Picture taken! Its size was: %zu bytes jpeg size %d", pic->len, jpeg_framebuffer->size);
+    camera_fb_t *pic= esp_camera_fb_get();
+	if(set_window_mark){
+		sensor_set_window(sensor,buffer,pic);
+	}
+	else{
+		memcpy_rev16(sensor,buffer,pic);
+	}
 
-    // Fix the BPP.
-    switch (sensor->pixformat)
-    {
-    case OMV_PIXFORMAT_GRAYSCALE:
-        MAIN_FB()->bpp = 1;
-        break;
-    case OMV_PIXFORMAT_YUV422:
-    case OMV_PIXFORMAT_RGB565:
-    {
-        MAIN_FB()->bpp = 2;
-        // for (int i = 0; i < pic->len; i += 2)
-        // {
-        //     uint8_t temp = 0;
-        //     temp = buffer->data[i];
-        //     buffer->data[i] = buffer->data[i + 1];
-        //     buffer->data[i + 1] = temp;
-        // }
-
-        /*
-            for(int i = 0; i < pic->len; i+=2){
-                uint8_t temp = 0;
-                temp = buffer->data[i];
-                buffer->data[i] = buffer->data[i+1];
-                buffer->data[i+1] = temp;
-            }
-            //*/
-        break;
-    }
-    case OMV_PIXFORMAT_BAYER:
-        MAIN_FB()->bpp = 3;
-        break;
-    case OMV_PIXFORMAT_JPEG:
-        MAIN_FB()->bpp = pic->len;
-        break;
-    default:
-        MAIN_FB()->bpp = -1;
-        break;
-    }
-
+	// Fix the BPP.
+	switch (sensor->pixformat)
+	{
+		case OMV_PIXFORMAT_GRAYSCALE:
+			MAIN_FB()->bpp = 1;
+			break;
+		case OMV_PIXFORMAT_YUV422:
+		case OMV_PIXFORMAT_RGB565:
+		{
+			MAIN_FB()->bpp = 2;
+			break;
+		}
+		case OMV_PIXFORMAT_BAYER:
+			MAIN_FB()->bpp = 3;
+			break;
+		case OMV_PIXFORMAT_JPEG:
+			MAIN_FB()->bpp = pic->len;
+			break;
+		default:
+			MAIN_FB()->bpp = -1;
+			break;
+	}
+	
     // Set the user image.
     if (image != NULL)
     {
@@ -826,11 +901,10 @@ int sensor_snapshot(omv_sensor_t *sensor, image_t *image, uint32_t flags)
         image->h = MAIN_FB()->h;
         image->bpp = MAIN_FB()->bpp;
         image->pixels = buffer->data;
-    }
-
+    }	
+	esp_camera_fb_return(pic);   
     return 0;
 }
-
 void sensor_set_ir_led(bool enable)
 {
     // if(enable)
@@ -839,3 +913,4 @@ void sensor_set_ir_led(bool enable)
     //   CAM_IR_LED_LOW();
     printf("%s IR LED by extgpio.\n", enable ? "Enabling" : "Disabling");
 }
+

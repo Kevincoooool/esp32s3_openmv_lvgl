@@ -51,9 +51,9 @@
 
 // Default pins for SPI(2), can be overridden by a board
 #ifndef MICROPY_HW_SPI2_SCK
-#define MICROPY_HW_SPI2_SCK (18)
-#define MICROPY_HW_SPI2_MOSI (23)
-#define MICROPY_HW_SPI2_MISO (19)
+#define MICROPY_HW_SPI2_SCK (21)
+#define MICROPY_HW_SPI2_MOSI (47)
+#define MICROPY_HW_SPI2_MISO (-1)
 #endif
 
 #define MP_HW_SPI_MAX_XFER_BYTES (4092)

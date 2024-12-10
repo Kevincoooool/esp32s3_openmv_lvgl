@@ -11,7 +11,7 @@
 #include <stdarg.h>
 #include "py/mphal.h"
 #include "py/runtime.h"
-//#include "pin.h"
+#include "mphalport.h"
 
 //#if MICROPY_PY_SENSOR
 
@@ -106,6 +106,13 @@ static mp_obj_t py_sensor_flush()
 
 static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
+/*
+mp_int_t draw_flag =0;
+mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_display_type), MP_MAP_LOOKUP);
+if (kw_arg != NULL) {
+	draw_flag = mp_obj_get_int(kw_arg->value);
+}
+*/
 #if MICROPY_PY_IMU
     // +-10 degree dead-zone around pitch 90/270.
     // +-35 degree active-zone around roll 0/90/180/270/360.
@@ -128,30 +135,41 @@ static mp_obj_t py_sensor_snapshot(uint n_args, const mp_obj_t *args, mp_map_t *
 static mp_obj_t py_sensor_skip_frames(uint n_args, const mp_obj_t *args, mp_map_t *kw_args)
 {
     mp_map_elem_t *kw_arg = mp_map_lookup(kw_args, MP_OBJ_NEW_QSTR(MP_QSTR_time), MP_MAP_LOOKUP);
-    mp_int_t time = 300; // OV Recommended.
+    mp_int_t time = 1000; // OV Recommended.
+	mp_obj_t image = py_image(0, 0, 0, 0);
+	// Note: OV2640 JPEG mode can __fatal_error().
 
     if (kw_arg != NULL) {
         time = mp_obj_get_int(kw_arg->value);
     }
 
     uint32_t millis = mp_hal_ticks_ms();
+	int j=0;
+	time=time/10;
 
     if (!n_args) {
         while ((mp_hal_ticks_ms() - millis) < time) { // 32-bit math handles wrap around...
-            py_sensor_snapshot(0, NULL, NULL);
+            //py_sensor_snapshot(0, NULL, NULL);
+			int ret = sensor.snapshot(&sensor, (image_t *) py_image_cobj(image), 0);
+			if (ret < 0) {
+				mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Capture Failed: %d"), ret);
+			}
         }
     } else {
-        for (int i = 0, j = mp_obj_get_int(args[0]); i < j; i++) {
+        for (int i = 0; i < time; i++) {
             if ((kw_arg != NULL) && ((mp_hal_ticks_ms() - millis) >= time)) {
                 break;
             }
-
-            py_sensor_snapshot(0, NULL, NULL);
+			int ret = sensor.snapshot(&sensor, (image_t *) py_image_cobj(image), 0);
+			if (ret < 0) {
+				mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Capture Failed: %d"), ret);
+			}
+            //py_sensor_snapshot(0, NULL, NULL);
         }
     }
-
     return mp_const_none;
 }
+
 
 static mp_obj_t py_sensor_width()
 {
@@ -993,6 +1011,7 @@ STATIC const mp_map_elem_t globals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_V240X240),               MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_240X240)},    /* 160x120   */
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_QVGA),                MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_QVGA)},     /* 320x240   */
+    { MP_OBJ_NEW_QSTR(MP_QSTR_HVGA),                MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_HVGA)},     /* 320x240   */
     { MP_OBJ_NEW_QSTR(MP_QSTR_VGA),                 MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_VGA)},      /* 640x480   */
     { MP_OBJ_NEW_QSTR(MP_QSTR_HQQQVGA),             MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_HQQQVGA)},  /* 80x40     */
     { MP_OBJ_NEW_QSTR(MP_QSTR_HQQVGA),              MP_OBJ_NEW_SMALL_INT(OMV_FRAMESIZE_HQQVGA)},   /* 160x80    */

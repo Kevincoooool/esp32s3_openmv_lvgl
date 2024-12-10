@@ -70,7 +70,15 @@ MP_WEAK NORETURN void fb_alloc_fail()
 
 void fb_alloc_init0()
 {
-    fb_alloc_base  = pointer = heap_caps_malloc(OMV_STACK_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_32BIT);
+	if (NULL ==MAIN_FB())
+	{
+		printf("FB BUFFER ERROR\n");
+		return;
+	}
+	pointer=(char*)MAIN_FB()+OMV_FB_SIZE;
+	fb_alloc_base  = pointer;
+	/*
+	fb_alloc_base  = pointer = heap_caps_malloc(OMV_STACK_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_32BIT);
     printf("fb_alloc_base(%p), OMV_STACK_SIZE[%d]\n",fb_alloc_base, OMV_STACK_SIZE);
     if(fb_alloc_base == NULL)
     {
@@ -81,6 +89,7 @@ void fb_alloc_init0()
     fballoc_overlay_start = fb_alloc_base+OMV_FB_ALLOC_SIZE;
     pointer_overlay = fballoc_overlay_end = fballoc_overlay_start+OMV_FB_ALLOC_OVERLAY_SIZE;
     #endif
+    */
 }
 
 uint32_t fb_avail()

@@ -30,12 +30,33 @@ by firmware programming).
         time.sleep(3)
 
 
+def write_main():
+    with open("main.py", "w") as f:
+        f.write(
+            """\
+import sensor, image, lcd
+sensor.reset() 
+sensor.set_pixformat(sensor.RGB565) 
+sensor.set_framesize(sensor.HQVGA) 
+while(True):
+    lcd.display(sensor.snapshot())
+"""
+        )
+        f.close()
+
+def write_config():
+    with open(".openmv_disk", "w") as f:
+        f.close()
+
+
 def setup():
     check_bootsec()
     print("Performing initial setup")
     os.VfsFat.mkfs(bdev)
     vfs = os.VfsFat(bdev)
     os.mount(vfs, "/")
+    #write_main()
+    write_config()
     with open("boot.py", "w") as f:
         f.write(
             """\

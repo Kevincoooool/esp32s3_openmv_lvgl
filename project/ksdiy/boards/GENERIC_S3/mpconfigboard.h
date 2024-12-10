@@ -1,4 +1,4 @@
-#define MICROPY_HW_BOARD_NAME               "ESP32S3 KSDIY"
+#define MICROPY_HW_BOARD_NAME               "酷世diy ESP32S3 OPENMV"
 #define MICROPY_HW_MCU_NAME                 "ESP32S3"
 
 #define MICROPY_PY_BLUETOOTH                (0)

@@ -37,7 +37,6 @@
 static int xfer_bytes;
 static int xfer_length;
 static enum usbdbg_cmd cmd;
-
 static volatile bool script_ready;
 static volatile bool script_running;
 static vstr_t script_buf;
@@ -46,13 +45,14 @@ static mp_obj_t mp_const_ide_interrupt = MP_OBJ_NULL;
 // These functions must be implemented in MicroPython CDC driver.
 extern uint32_t usb_cdc_buf_len();
 extern uint32_t usb_cdc_get_buf(uint8_t *buf, uint32_t len);
+//char arc_buffer[64];
 
 void usbdbg_init()
 {
     cmd = USBDBG_NONE;
     script_ready = false;
     script_running = false;
-    vstr_init(&script_buf, 100 * 1024);
+    vstr_init(&script_buf,100*1024);
     mp_const_ide_interrupt = mp_obj_new_exception_msg(&mp_type_Exception, "IDE interrupt");
 }
 
@@ -87,9 +87,9 @@ bool usbdbg_handle_script_status(void)
 inline void usbdbg_set_irq_enabled(bool enabled)
 {
     if (enabled) {
-        // dcd_int_enable(0);
+        //dcd_int_enable(0);
     } else {
-        // dcd_int_disable(0);
+        //dcd_int_disable(0);
     }
 }
 
@@ -159,24 +159,15 @@ void usbdbg_data_in(void *buffer, int length)
 
         case USBDBG_FRAME_DUMP:
         // ESP_LOGI("222","JPEG_FB()->w %d JPEG_FB()->w %d JPEG_FB()->w %d",JPEG_FB()->w,JPEG_FB()->h,JPEG_FB()->size);
-
-            if (xfer_bytes < xfer_length) {
-                memcpy(buffer, JPEG_FB()->pixels+xfer_bytes, length);
-                xfer_bytes += length;
-                if (xfer_bytes == xfer_length) {
-                    cmd = USBDBG_NONE;
-                    JPEG_FB()->w = 0; JPEG_FB()->h = 0; JPEG_FB()->size = 0;
-                    mutex_unlock(&JPEG_FB()->lock, MUTEX_TID_IDE);
-                }
-            }
-            // if (xfer_bytes < xfer_length) {
-            //     memcpy(buffer, JPEG_FB()->pixels+xfer_bytes, length);
-            //     xfer_bytes += length;
-            //     if (xfer_bytes == xfer_length) {
-            //         cmd = USBDBG_NONE;
-            //         mutex_unlock(&JPEG_FB()->lock, MUTEX_TID_IDE);
-            //     }
-            // }
+			if (xfer_bytes <xfer_length) {
+				memcpy(buffer, JPEG_FB()->pixels+xfer_bytes, length);
+				xfer_bytes += length;
+				if (xfer_bytes == xfer_length) {
+					cmd = USBDBG_NONE;
+					JPEG_FB()->w = 0; JPEG_FB()->h = 0; JPEG_FB()->size = 0;
+					mutex_unlock(&JPEG_FB()->lock, MUTEX_TID_IDE);
+				}
+			}
             break;
 
         case USBDBG_ARCH_STR: {
@@ -189,8 +180,11 @@ void usbdbg_data_in(void *buffer, int length)
                 *((unsigned int *) (OMV_UNIQUE_ID_ADDR + 4)),
                 *((unsigned int *) (OMV_UNIQUE_ID_ADDR + 0)),
             };
-            snprintf((char *) buffer, 64, "%s [%s:%08X%08X%08X]",
-                    OMV_ARCH_STR, OMV_BOARD_TYPE, uid[0], uid[1], uid[2]);
+			snprintf((char *) buffer, 64, "%s [%s:363337363032510D002B003A]",
+                    OMV_ARCH_STR, OMV_BOARD_TYPE);	
+            //snprintf((char *) buffer, 64, "%s [%s:%08X%08X%08X]",
+            //        OMV_ARCH_STR, OMV_BOARD_TYPE, uid[0], uid[1], uid[2]);
+			//memcpy(arc_buffer,buffer,64);
             cmd = USBDBG_NONE;
             break;
         }
@@ -314,7 +308,6 @@ void usbdbg_data_out(void *buffer, int length)
             cmd = USBDBG_NONE;
             break;
         }
-
         default: /* error */
             break;
     }
@@ -354,11 +347,11 @@ void usbdbg_control(void *buffer, uint8_t request, uint32_t length)
         case USBDBG_SCRIPT_STOP:
             if (script_running) {
                 // Set script running flag
-                script_running = false;
-
+                //script_running = false;//这里不停止运行时可能导致内存没有释放
+				//memset(script_buf.buf,0,script_buf.alloc);
+				//vstr_clear(&script_buf);
                 // Disable IDE IRQ (re-enabled by pyexec or main).
                 usbdbg_set_irq_enabled(false);
-
                 // interrupt running code by raising an exception
                 mp_obj_exception_clear_traceback(mp_const_ide_interrupt);
                 mp_sched_exception(mp_const_ide_interrupt);
@@ -367,9 +360,8 @@ void usbdbg_control(void *buffer, uint8_t request, uint32_t length)
             break;
 
         case USBDBG_SCRIPT_SAVE:
-            // TODO: save running script
-            cmd = USBDBG_NONE;
-            break;
+            // TODO: save running script           
+			break;
 
         case USBDBG_SCRIPT_RUNNING:
             xfer_bytes = 0;
@@ -426,3 +418,4 @@ void usbdbg_control(void *buffer, uint8_t request, uint32_t length)
             break;
     }
 }
+

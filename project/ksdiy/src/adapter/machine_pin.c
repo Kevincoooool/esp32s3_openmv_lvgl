@@ -182,6 +182,8 @@ STATIC const machine_pin_obj_t machine_pin_obj[] = {
     {{&machine_pin_type}, GPIO_NUM_44}, // U0RXD
     {{&machine_pin_type}, GPIO_NUM_45},
     {{&machine_pin_type}, GPIO_NUM_46},
+	{{&machine_pin_type}, GPIO_NUM_47},
+	{{&machine_pin_type}, GPIO_NUM_48},
 
     #endif
 };

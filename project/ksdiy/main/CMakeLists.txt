@@ -22,7 +22,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
 endif()
 
 set(MICROPY_QSTRDEFS_PORT
-    ${PROJECT_DIR}/src/adapter/qstrdefsport.h
+    ${PROJECT_DIR}/src/adapter/qstrdefsport.h    
 )
 
 set(MICROPY_SOURCE_SHARED
@@ -33,6 +33,7 @@ set(MICROPY_SOURCE_SHARED
     #${MICROPY_DIR}/shared/runtime/stdout_helpers.c
     ${MICROPY_DIR}/shared/runtime/sys_stdio_mphal.c
     ${MICROPY_DIR}/shared/runtime/pyexec.c
+    #${MICROPY_DIR}/shared/runtime/gchelper_generic.c
 )
 
 set(MICROPY_SOURCE_LIB
@@ -55,6 +56,7 @@ set(MICROPY_SOURCE_DRIVERS
 
 set(MICROPY_SOURCE_PORT
     ${PROJECT_DIR}/src/main.c
+    ${PROJECT_DIR}/src/firmware_version.c
     ${PROJECT_DIR}/src/adapter/uart.c
     #${PROJECT_DIR}/src/adapter/usb.c
     ${PROJECT_DIR}/src/adapter/gccollect.c
@@ -116,21 +118,17 @@ set(AITEST_SOURCE_DRIVERS
     
 )
 
-# if(CONFIG_USB_CDC_ENABLED)
-# list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/usb/usb_cdc.c)
-
-list(APPEND CHERRYUSB_SRCS 
-${PROJECT_DIR}/src/usb_cherry/addition/usb_cherry_platform.c
-${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/cdc/usbd_cdc.c
-${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/msc/usbd_msc.c
-${PROJECT_DIR}/src/usb_cherry/CherryUSB/core/usbd_core.c
-${PROJECT_DIR}/src/usb_cherry/CherryUSB/port/dwc2/usb_dc_dwc2.c
-)
-list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/usb/cdc_acm_cherryusb.c)
-
-#list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/adapter/usb.c)
-# list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/usb/msc_disk.c)
-# endif()
+if(CONFIG_CHERRY_USB_ENABLED)
+	list(APPEND CHERRYUSB_SRCS 
+	${PROJECT_DIR}/src/usb_cherry/addition/usb_cherry_platform.c
+	${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/cdc/usbd_cdc.c
+	${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/msc/usbd_msc.c
+	${PROJECT_DIR}/src/usb_cherry/CherryUSB/core/usbd_core.c
+	${PROJECT_DIR}/src/usb_cherry/CherryUSB/port/dwc2/usb_dc_dwc2.c)
+	list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/usb/cdc_acm_cherryusb.c)
+else()
+	list(APPEND MICROPY_SOURCE_PORT ${PROJECT_DIR}/src/usb/usb_cdc.c)
+endif()
 
 set(MICROPY_SOURCE_QSTR
     ${MICROPY_SOURCE_PY}
@@ -155,6 +153,7 @@ set(IDF_COMPONENTS
     esp_event
     esp_ringbuf
     esp_rom
+    esp_lcd
     esp_wifi
     freertos
     heap
@@ -171,8 +170,6 @@ set(IDF_COMPONENTS
     ulp
     vfs
     xtensa
-    screen
-    bus
     usb
 )
 
@@ -198,7 +195,7 @@ elseif(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND IDF_COMPONENTS tinyusb)
 elseif(IDF_TARGET STREQUAL "esp32s3")
     list(APPEND IDF_COMPONENTS esp32s3)
-    # list(APPEND IDF_COMPONENTS tinyusb)
+    list(APPEND IDF_COMPONENTS tinyusb)
     list(APPEND IDF_COMPONENTS esp32-camera)
 endif()
 
@@ -213,19 +210,19 @@ idf_component_register(
         ${MICROPY_SOURCE_DRIVERS}
         ${MICROPY_SOURCE_PORT}
         ${OMV_SRCS}
-	      ${LV_SRC}
-          ${CHERRYUSB_SRCS}
+	    ${LV_SRC}
+        #${CHERRYUSB_SRCS}
     INCLUDE_DIRS
         ${MICROPY_INC_CORE}
         ${MICROPY_INC_USERMOD}
         ${MICROPY_PORT_DIR}
-        ${PROJECT_DIR}/src/usb
-        ${PROJECT_DIR}/src/usb_cherry/include
-        ${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/cdc
-        ${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/msc
-        ${PROJECT_DIR}/src/usb_cherry/CherryUSB/common
-        ${PROJECT_DIR}/src/usb_cherry/CherryUSB/core
-        ${PROJECT_DIR}/src/usb_cherry/CherryUSB/port/dwc2
+        ${PROJECT_DIR}/src/usb      
+        #${PROJECT_DIR}/src/usb_cherry/include
+        #${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/cdc
+        #${PROJECT_DIR}/src/usb_cherry/CherryUSB/class/msc
+        #${PROJECT_DIR}/src/usb_cherry/CherryUSB/common
+        #${PROJECT_DIR}/src/usb_cherry/CherryUSB/core
+        #${PROJECT_DIR}/src/usb_cherry/CherryUSB/port/dwc2
         ${PROJECT_DIR}/src/lcd/
         ${PROJECT_DIR}/src/driver/
         ${MICROPY_PORT_DIR}/src/adapter/
@@ -235,11 +232,9 @@ idf_component_register(
         ${MICROPY_DIR}/py  
         ${PROJECT_DIR}/src/lvgl_mlab/inc
         ${LV_INCLUDE}
-        ${PROJECT_DIR}/components/lvgl_esp32_drivers
         ${PROJECT_DIR}/components
-        ${PROJECT_DIR}/components/screen
-        ${PROJECT_DIR}/components/bus
         ${PROJECT_DIR}/src/mpy_modules/system
+        
     REQUIRES
         ${IDF_COMPONENTS}
 )
@@ -252,6 +247,8 @@ set(MICROPY_CROSS_FLAGS -march=xtensawin)
 
 # Set compile options for this port.
 target_compile_definitions(${MICROPY_TARGET} PUBLIC
+    CONFIG_NN_OPTIMIZED=1
+	CONFIG_NN_OPTIMIZATIONS=1
     CONFIG_OPENMV_SUPPORT=1
     ${MICROPY_DEF_CORE}
     MICROPY_ESP_IDF_4=1
@@ -295,13 +292,11 @@ if(IDF_VERSION_MINOR GREATER_EQUAL 2)
     list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/soc/${IDF_TARGET}/include/soc)
     list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/soc/${IDF_TARGET})
     list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/soc/include/soc)
-    
-    # if(IDF_VERSION_MINOR GREATER_EQUAL 3)
-    #     list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/tinyusb/additions/include)
-    #     list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/tinyusb/tinyusb/src)
-    # endif()
+    if(IDF_VERSION_MINOR GREATER_EQUAL 3)
+         list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/tinyusb/additions/include)
+         list(APPEND MICROPY_CPP_INC_EXTRA ${IDF_PATH}/components/tinyusb/tinyusb/src)
+    endif()
 endif()
-
 # Include the main MicroPython cmake rules.
 include(${MICROPY_DIR}/py/mkrules.cmake)
 add_compile_options(-fdiagnostics-color=always)

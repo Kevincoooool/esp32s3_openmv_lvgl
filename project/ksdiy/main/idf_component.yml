@@ -1,15 +1,6 @@
-# version: "0.0.2" # Component version, required only for components pushed to the service
-# targets: # List of supported targets (optional, if missing all targets are considered to be supported)
-#   - esp32s2
-#   - esp32s3
-# description: ESP32-Sx CDC example # Description (optional)
-# url: https://github.com/iot-components/examples_tinyusb_esp32sx # Original repository (optional)
-# dependencies:
-#   # Required IDF version
-#   idf:
-#     version: ">=4.4"
-#   # For components maintained by Espressif:
-#   # Same as `espressif/component`
-#   tinyusb:
-#     git: https://github.com/iot-components/tinyusb.git
-#     public: true
+dependencies:
+  idf: ">=4.4"
+  espressif/esp-dl: "1.1.0"
+  espressif/esp32-camera: "^2.0.13"
+  espressif/esp-sr: "^1.9.0"
+  esp_lcd_touch_cst816s: "^1.0"

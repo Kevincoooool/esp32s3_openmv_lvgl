@@ -46,10 +46,13 @@
 #include "tusb.h"
 
 #if CONFIG_USB_ENABLED
-#define DBG_MAX_PACKET      (64)
+#define DBG_TX_PACKET       (CONFIG_TINYUSB_CDC_TX_BUFSIZE)
+#define DBG_RX_PACKET       (CONFIG_TINYUSB_CDC_RX_BUFSIZE)
 #define IDE_BAUDRATE_SLOW   (921600)
 #define IDE_BAUDRATE_FAST   (12000000)
-#define CONFIG_USB_CDC_RX_BUFSIZE 4096
+#define TX_RINGBUF_LEN		(200*1024)
+
+#define CONFIG_USB_CDC_RX_BUFSIZE2 4096
 // MicroPython runs as a task under FreeRTOS
 #define USB_CDC_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 10)
 #define USB_CDC_TASK_STACK_SIZE      (16 * 1024)
@@ -65,9 +68,9 @@ static bool linecode_set = false, userial_open = false;
 extern void usbdbg_data_in(void *buffer, int length);
 extern void usbdbg_data_out(void *buffer, int length);
 extern void usbdbg_control(void *buffer, uint8_t brequest, uint32_t wlength);
-//  uint8_t *tx_ringbuf_array=NULL;
- uint8_t tx_ringbuf_array[1024*200];
-    volatile ringbuf_t tx_ringbuf;
+uint8_t *tx_ringbuf_array=NULL;
+//uint8_t tx_ringbuf_array[TX_RINGBUF_LEN];
+volatile ringbuf_t tx_ringbuf;
 
 uint32_t usb_cdc_buf_len()
 {
@@ -90,11 +93,15 @@ uint32_t usb_cdc_get_buf(uint8_t *buf, uint32_t len)
 #include "py/mphal.h"
 void cdc_task_serial_mode(void)
 {
+	if (tud_cdc_connected())
+	{
+		 dbg_mode_enabled = 1;
+	}
     if (tud_ready() && userial_open) {
         // connected and there are data available
         if (tud_cdc_available()) {
-            uint8_t usb_rx_buf[CONFIG_USB_CDC_RX_BUFSIZE];
-            uint32_t len = tud_cdc_read(usb_rx_buf, CONFIG_USB_CDC_RX_BUFSIZE);
+            uint8_t usb_rx_buf[CONFIG_USB_CDC_RX_BUFSIZE2];
+            uint32_t len = tud_cdc_read(usb_rx_buf, CONFIG_USB_CDC_RX_BUFSIZE2);
             for (int i = 0; i < len; i++) {
                 if (usb_rx_buf[i] == mp_interrupt_char) {
                     debug("keyboard_interrupt. ");
@@ -109,7 +116,7 @@ void cdc_task_serial_mode(void)
           vTaskDelay(pdMS_TO_TICKS(1));
         }
     } else {
-      vTaskDelay(pdMS_TO_TICKS(200));
+      vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
 
@@ -135,8 +142,10 @@ void usb_tx_strn(const char *str, size_t len) {
 void cdc_task_debug_mode(void)
 {
     if (tud_cdc_connected()) {
+		dbg_mode_enabled = 1;
       if(tud_cdc_available()) {
-        uint8_t buf[DBG_MAX_PACKET];
+        uint8_t buf_tx[DBG_TX_PACKET];
+		uint8_t buf[DBG_RX_PACKET];
         uint32_t count = tud_cdc_read(buf, 6);
         if (count < 6) {
             //Shouldn't happen
@@ -146,20 +155,20 @@ void cdc_task_debug_mode(void)
         uint8_t request = buf[1];
         uint32_t xfer_length = *((uint32_t*)(buf + 2));
         usbdbg_control(buf + 6, request, xfer_length);
-
         while (xfer_length) {
             if (request & 0x80) {
                 // Device-to-host data phase
-                int bytes = MIN(xfer_length, DBG_MAX_PACKET);
-                if (bytes <= tud_cdc_write_available()) {
+                int bytes = MIN(xfer_length, DBG_TX_PACKET);
+                if (bytes <= tud_cdc_write_available()) 
+				{
                     xfer_length -= bytes;
-                    usbdbg_data_in(buf, bytes);
-                    tud_cdc_write(buf, bytes);
-                    
+                    usbdbg_data_in(buf_tx, bytes);
+                    tud_cdc_write(buf_tx, bytes);
                 }
+				
             } else {
                 // Host-to-device data phase
-                int bytes = MIN(xfer_length, DBG_MAX_PACKET);
+                int bytes = MIN(xfer_length, DBG_RX_PACKET);
                 uint32_t count = tud_cdc_read(buf, bytes);
                 if (count == bytes) {
                     xfer_length -= count;
@@ -170,6 +179,7 @@ void cdc_task_debug_mode(void)
         tud_cdc_write_flush();
       }
     } else {
+      dbg_mode_enabled=0;
       vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
@@ -231,7 +241,7 @@ static void usb_otg_router_to_internal_phy()
   *usb_phy_sel_reg |= BIT(19) | BIT(20);
 }
 #endif
-esp_err_t tusb_msc_init(const tinyusb_config_msc_t *cfg);
+//esp_err_t tusb_msc_init(const tinyusb_config_msc_t *cfg);
 int usb_cdc_init(void)
 {
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -239,10 +249,10 @@ int usb_cdc_init(void)
     if (!initialized) {
         initialized = true;
         // tx_ringbuf_array = malloc(1024*300);
-        // tx_ringbuf_array = heap_caps_malloc(500*1024, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        tx_ringbuf_array = heap_caps_malloc(TX_RINGBUF_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
         tx_ringbuf.buf = tx_ringbuf_array;
-        tx_ringbuf.size = sizeof(tx_ringbuf_array);
+        tx_ringbuf.size = TX_RINGBUF_LEN;
         // tx_ringbuf.size =500*1024;
         tx_ringbuf.iget = 0;
         tx_ringbuf.iput = 0;
@@ -303,26 +313,41 @@ static tusb_msc_callback_t cb_mount[LOGICAL_DISK_NUM] = {NULL};
 static tusb_msc_callback_t cb_unmount[LOGICAL_DISK_NUM] = {NULL};
 static int s_disk_block_size[LOGICAL_DISK_NUM] = {0};
 static bool s_ejected[LOGICAL_DISK_NUM] = {true};
-void usb_msc_init(void)
-{
-    char *path = "/a";
-    char *out_path = NULL;
-    mp_vfs_mount_t *vfs_mount = mp_vfs_lookup_path(path,&out_path);
-    msc_pdrv = ((fs_user_mount_t *)vfs_mount->obj);
 
-}
 esp_err_t tusb_msc_init(const tinyusb_config_msc_t *cfg)
 {
     if (cfg == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-  printf("tusb_msc_init");
+    //printf("tusb_msc_init");
     cb_mount[0] = cfg->cb_mount;
     cb_unmount[0] = cfg->cb_unmount;
     s_pdrv[0] = cfg->pdrv;
     //s_pdrv[1] = 1;
     return ESP_OK;
 }
+
+void usb_msc_init(void)
+{
+	char *path = "/";
+    char *out_path = NULL;
+	mp_vfs_mount_t *vfs_mount=NULL;
+	vfs_mount= mp_vfs_lookup_path(path,&out_path);
+	msc_pdrv = ((fs_user_mount_t *)vfs_mount->obj);
+	if (0!=strcmp(path, out_path)){
+		ESP_LOGI(__func__, "mount path:%s",out_path);
+		return;		
+	}
+	tinyusb_config_msc_t msc_cfg = {
+		.pdrv = 1,
+		.cb_mount=tud_mount_cb,
+		.cb_unmount=tud_umount_cb,
+	};
+	//ESP_LOGI(TAG, "USB initialization msc device DONE");
+	vTaskDelay(100 / portTICK_PERIOD_MS);
+	ESP_ERROR_CHECK(tusb_msc_init(&msc_cfg));
+}
+
 
 //--------------------------------------------------------------------+
 // tinyusb callbacks
@@ -608,3 +633,4 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
 }
 #endif
 #endif
+

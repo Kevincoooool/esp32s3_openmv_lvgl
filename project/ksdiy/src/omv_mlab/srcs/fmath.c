@@ -11,6 +11,7 @@
 #include "fmath.h"
 #include "common.h"
 #include "math.h"
+#include <esp_attr.h>
 
 #define M_PI    3.14159265f
 #define M_PI_2  1.57079632f
@@ -93,7 +94,7 @@ typedef union{
     };
 }exp_t;
 
-float fast_expf(float x)
+float IRAM_ATTR fast_expf(float x)
 {
     exp_t e;
     e.l = (uint32_t)(1512775 * x + 1072632447);
@@ -112,7 +113,7 @@ float fast_expf(float x)
  * 1/3 is approximated as 1/4 + 1/16 + 1/64 + 1/256 + ... + 1/65536.
  * The constant 0x2a511cd0 balances the relative error at +-0.0321.
  */
-float fast_cbrtf(float x)
+float IRAM_ATTR fast_cbrtf(float x)
 {
    union {int ix; float x;} v;
    v.x = x;                // x can be viewed as int.
@@ -137,7 +138,7 @@ float OMV_ATTR_ALWAYS_INLINE fast_fabsf(float x)
 
 }
 
-inline float fast_atanf(float xx)
+inline float IRAM_ATTR fast_atanf(float xx)
 {
     float x, y, z;
     int sign;
@@ -183,7 +184,7 @@ inline float fast_atanf(float xx)
     return( y );
 }
 
-float fast_atan2f(float y, float x)
+float IRAM_ATTR fast_atan2f(float y, float x)
 {
   if(x > 0 && y >= 0)
     return fast_atanf(y/x);
@@ -200,7 +201,7 @@ float fast_atan2f(float y, float x)
   return (y == 0) ? 0 : ((y > 0) ? M_PI : -M_PI);
 }
 
-float fast_log2(float x)
+float IRAM_ATTR fast_log2(float x)
 {
   union { float f; uint32_t i; } vx = { x };
   union { uint32_t i; float f; } mx = { (vx.i & 0x007FFFFF) | 0x3f000000 };
@@ -211,19 +212,19 @@ float fast_log2(float x)
            - 1.72587999f / (0.3520887068f + mx.f);
 }
 
-float fast_log(float x)
+float IRAM_ATTR fast_log(float x)
 {
   return 0.69314718f * fast_log2 (x);
 }
 
-float fast_powf(float a, float b)
+float IRAM_ATTR fast_powf(float a, float b)
 {
     union { float d; int x; } u = { a };
     u.x = (int)((b * (u.x - 1064866805)) + 1064866805);
     return u.d;
 }
 
-void fast_get_min_max(float *data, size_t data_len, float *p_min, float *p_max)
+void IRAM_ATTR fast_get_min_max(float *data, size_t data_len, float *p_min, float *p_max)
 {
     float min = FLT_MAX, max = -FLT_MAX;
 

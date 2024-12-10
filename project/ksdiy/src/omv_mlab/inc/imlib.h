@@ -231,6 +231,24 @@ color_thresholds_list_lnk_data_t;
 #define COLOR_V_MIN -128
 #define COLOR_V_MAX 127
 
+#define IM_R825(p) \
+    ({ __typeof__ (p) _p = (p); \
+       rb825_table[_p]; })
+
+#define IM_G826(p) \
+    ({ __typeof__ (p) _p = (p); \
+       g826_table[_p]; })
+
+#define IM_B825(p) \
+    ({ __typeof__ (p) _p = (p); \
+       rb825_table[_p]; })
+
+#define IM_RGB565(r, g, b) \
+    ({ __typeof__ (r) _r = (r); \
+       __typeof__ (g) _g = (g); \
+       __typeof__ (b) _b = (b); \
+       ((_r)<<3)|((_g)>>3)|((_g)<<13)|((_b)<<8); })
+
 // RGB565 Stuff //
 
 #define COLOR_RGB565_TO_R5(pixel) (((pixel) >> 11) & 0x1F)

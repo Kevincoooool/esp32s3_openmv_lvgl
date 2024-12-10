@@ -8,7 +8,8 @@
 void *unaligned_memcpy(void *dest, void *src, size_t n)
 {
     // printf("unaligned_memcpy %p %p, length %d\n", dest, src, n);
-#if (CPU == cortex - m4) || (CPU == cortex - m7)
+//#if (CPU == cortex - m4) || (CPU == cortex - m7)
+#if 1	
     // TODO: Make this faster using only 32-bit aligned reads/writes with data shifting.
     uint32_t *dest32 = (uint32_t *)dest;
     uint32_t *src32 = (uint32_t *)src;
@@ -35,17 +36,18 @@ void *unaligned_memcpy(void *dest, void *src, size_t n)
 // ARM Cortex-M4/M7 Processors can access memory using unaligned 32-bit reads/writes.
 void *unaligned_memcpy_rev16(void *dest, void *src, size_t n)
 {
+
+
     uint32_t *dest32 = (uint32_t *)dest;
     uint32_t *src32 = (uint32_t *)src;
 
-#if (CPU == cortex - m4) || (CPU == cortex - m7)
+//#if (CPU == cortex - m4) || (CPU == cortex - m7)
+#if 1		
     // TODO: Make this faster using only 32-bit aligned reads/writes with data shifting.
     for (; n > 2; n -= 2)
     {
         *dest32++ = __REV16(*src32++);
     }
-#endif
-
     uint16_t *dest16 = (uint16_t *)dest32;
     uint16_t *src16 = (uint16_t *)src32;
 
@@ -53,7 +55,8 @@ void *unaligned_memcpy_rev16(void *dest, void *src, size_t n)
     {
         *dest16++ = __REV16(*src16++);
     }
-
+#endif
+	
     return dest;
 }
 
@@ -61,8 +64,8 @@ void *unaligned_2_to_1_memcpy(void *dest, void *src, size_t n)
 {
     uint32_t *dest32 = (uint32_t *)dest;
     uint32_t *src32 = (uint32_t *)src;
-
-#if (CPU == cortex - m4) || (CPU == cortex - m7)
+#if 1	
+//#if (CPU == cortex - m4) || (CPU == cortex - m7)
     // TODO: Make this faster using only 32-bit aligned reads/writes with data shifting.
     for (; n > 4; n -= 4)
     {

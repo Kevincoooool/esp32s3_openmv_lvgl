@@ -74,10 +74,70 @@
 #if MICROPY_BLUETOOTH_NIMBLE
 #include "extmod/modbluetooth.h"
 #endif
+#include "firmware_version.h"
 
 // MicroPython runs as a task under FreeRTOS
 #define MP_TASK_PRIORITY        (ESP_TASK_PRIO_MIN + 1)
 #define MP_TASK_STACK_SIZE      (16 * 1024)
+void flash_led(uint8_t n)
+{
+    gpio_pad_select_gpio(GPIO_NUM_3);
+	gpio_set_direction(GPIO_NUM_3,GPIO_MODE_OUTPUT);
+	uint8_t i=0;
+	for(i=0;i<n;i++)
+	{
+	  gpio_set_level(GPIO_NUM_3,1);
+	  vTaskDelay(10);
+	  gpio_set_level(GPIO_NUM_3,0);
+	  vTaskDelay(10);
+	}	
+}
+
+int exec_boot_script(const char *path, bool selftest, bool interruptible)
+{
+	nlr_buf_t nlr;
+	bool interrupted = false;
+	int ret=0;
+
+	if (nlr_push(&nlr) == 0) {
+	    // Enable IDE interrupts if allowed.
+	    if (interruptible) {
+	        usbdbg_set_irq_enabled(true);
+	        usbdbg_set_script_running(true);
+	    }
+
+	    // Parse, compile and execute the script.
+	    //pyexec_file(path);
+		ret = pyexec_frozen_module(path);
+	    nlr_pop();
+	} else {
+	    interrupted = true;
+	}
+	// Disable IDE interrupts
+	usbdbg_set_irq_enabled(false);
+	usbdbg_set_script_running(false);
+
+	if (interrupted) {
+	    if (selftest) {
+	        // Get the exception message. TODO: might be a hack.
+	        //mp_obj_str_t *str = mp_obj_exception_get_value((mp_obj_t)nlr.ret_val);
+	        // If any of the self-tests fail log the exception message
+	        // and loop forever. Note: IDE exceptions will not be caught.
+	        //__fatal_error((const char*) str->data);
+	        ESP_LOGI("mp_task", "mp_obj_print_exception");
+            mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+	        ret= PYEXEC_FORCED_EXIT;
+	    } else {
+	        mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+	        if (nlr_push(&nlr) == 0) {
+	            nlr_pop();
+				flash_led(3);
+	        }// If this gets interrupted again ignore it.
+	    }
+	}
+	return ret;
+
+}
 
 int vprintf_null(const char *format, va_list ap) {
     // do nothing: this is used as a log target during raw repl mode
@@ -86,26 +146,26 @@ int vprintf_null(const char *format, va_list ap) {
 
 void mp_task(void *pvParameter) {
     volatile uint32_t sp = (uint32_t)get_sp();
-    gpio_pad_select_gpio(GPIO_NUM_48);
-    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_OUTPUT);
-    gpio_set_level(GPIO_NUM_48,1);
-    register_lcd(NULL, NULL, false);
+    // register_lcd(NULL, NULL, false);
     #if MICROPY_PY_THREAD
     mp_thread_init(pxTaskGetStackStart(NULL), MP_TASK_STACK_SIZE / sizeof(uintptr_t));
     #endif
     // #if CONFIG_USB_ENABLED
-    // usb_cdc_init();
+    usb_cdc_init();
     // usb_msc_init();
     // #endif
-    cdc_acm_init00();
+    //cdc_acm_init00();
     uart_init();
-    
     machine_init();
     framebuffer_init0();
     fb_alloc_init0();
-    
-    // sensor_init();
-
+		
+	int version=0;
+	initNVS();
+	save_firmware_version(652);
+	version=get_firmware_version();
+	ESP_LOGI("mp_task", "firm_version[%d]", version);
+	check_firmware_version(version);
     // TODO: CONFIG_SPIRAM_SUPPORT is for 3.3 compatibility, remove after move to 4.0.
     #if CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_SPIRAM_SUPPORT
     // Try to use the entire external SPIRAM directly for the heap
@@ -138,24 +198,24 @@ void mp_task(void *pvParameter) {
         mp_task_heap = malloc(mp_task_heap_size);
     }
     #elif CONFIG_ESP32S3_SPIRAM_SUPPORT
-    size_t mp_task_heap_size = 2 * 1024 * 1024;
-    size_t esp_spiram_size = esp_spiram_get_size();
-    void *mp_task_heap = NULL;
-    ESP_LOGI("mp_task", "esp_spiram_size[%d]", esp_spiram_size);
-    // void *mp_task_heap = (void *)SOC_EXTRAM_DATA_HIGH - esp_spiram_size;
-    if (esp_spiram_size > 0) {
-        mp_task_heap = heap_caps_malloc(mp_task_heap_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-        ESP_LOGI("mp_task=", "mp_task_heap(%p), mp_task_heap_size[%d]\n",mp_task_heap, mp_task_heap_size);
-        if(mp_task_heap == NULL)
-        {
-            ESP_LOGI("mp_task", "malloc heap for mp task failed, heap size if %d\n", mp_task_heap_size);
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
-        }
-    } else {
-        // No SPIRAM, fallback to normal allocation
-        mp_task_heap_size = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-        mp_task_heap = malloc(mp_task_heap_size);
-    }
+	    size_t mp_task_heap_size =1* 1024 * 1024;
+	    size_t esp_spiram_size = esp_spiram_get_size();
+	    void *mp_task_heap = NULL;
+	    ESP_LOGI("mp_task", "esp_spiram_size[%d]", esp_spiram_size);
+	    // void *mp_task_heap = (void *)SOC_EXTRAM_DATA_HIGH - esp_spiram_size;
+	    if (esp_spiram_size > 0) {
+	        mp_task_heap = heap_caps_malloc(mp_task_heap_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+	        ESP_LOGI("mp_task=", "mp_task_heap(%p), mp_task_heap_size[%d]\n",mp_task_heap, mp_task_heap_size);
+	        if(mp_task_heap == NULL)
+	        {
+	            ESP_LOGI("mp_task", "malloc heap for mp task failed, heap size if %d\n", mp_task_heap_size);
+	            vTaskDelay(2000 / portTICK_PERIOD_MS);
+	        }
+	    } else {
+	        // No SPIRAM, fallback to normal allocation
+	        mp_task_heap_size = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+	        mp_task_heap = malloc(mp_task_heap_size);
+	    }
     #else
     // Allocate the uPy heap using malloc and get the largest available region
     size_t mp_task_heap_size = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
@@ -166,31 +226,34 @@ soft_reset:
     // initialise the stack pointer for the main thread
     mp_stack_set_top((void *)sp);
     mp_stack_set_limit(MP_TASK_STACK_SIZE - 1024);
-    gc_init(mp_task_heap, mp_task_heap + mp_task_heap_size);
+    gc_init(mp_task_heap, mp_task_heap + mp_task_heap_size);	
     mp_init();
     mp_obj_list_init(mp_sys_path, 0);
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR_));
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_lib));
     mp_obj_list_init(mp_sys_argv, 0);
     readline_init0();
-
+	usbdbg_init();
     // initialise peripherals
     machine_pins_init();
+	//vTaskDelay(100);
     // run boot-up scripts
     pyexec_frozen_module("_boot.py");
-    sensor_init();
+	flash_led(3);
 #if CONFIG_USB_MSC_ENABLED
-    usb_msc_init();
-    #endif
-    pyexec_file_if_exists("boot.py");    
-    int ret = pyexec_file_if_exists("main.py");
-    if (ret & PYEXEC_FORCED_EXIT) {
-        printf("soft_reset_exit\r\n");
-        goto soft_reset_exit;
-    }
-    gpio_pad_select_gpio(GPIO_NUM_48);
-    gpio_set_direction(GPIO_NUM_48,GPIO_MODE_OUTPUT);
-    gpio_set_level(GPIO_NUM_48,1);
+	// usb_msc_init();
+	flash_led(3);
+#endif
+	sensor_init();//sensor初始化要放在USB挂载之后，esp_start脚本之前
+	vTaskDelay(200);
+	//pyexec_file_if_exists("boot.py");//boot.py不开放，防止用户写错误启动脚本导致无法正常运行
+	int ret=exec_boot_script("esp_start.py", false, true);
+	if (ret & PYEXEC_FORCED_EXIT) {
+		flash_led(3);
+		printf("soft_reset_exit\r\n");
+		goto soft_reset_exit;
+	}
+    
  repl_again:
     ESP_LOGD("mp_task", "mp_interrupt_char 0x%X", mp_interrupt_char);
     usbdbg_init();
@@ -239,7 +302,6 @@ soft_reset:
     }
     goto soft_reset_exit;
 soft_reset_exit:
-
     #if MICROPY_BLUETOOTH_NIMBLE
     mp_bluetooth_deinit();
     #endif
@@ -250,7 +312,7 @@ soft_reset_exit:
     gc_sweep_all();
     mp_hal_stdout_tx_str("MPY: soft reboot\r\n");
     esp32_sensor_deinit();
-    // vTaskDelay(200);
+    vTaskDelay(200);
     // deinitialise peripherals
     machine_pins_deinit();
     machine_deinit();
@@ -292,3 +354,4 @@ void *esp_native_code_commit(void *buf, size_t len, void *reloc) {
     memcpy(p, buf, len);
     return p;
 }
+

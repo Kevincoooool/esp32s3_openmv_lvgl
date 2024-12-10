@@ -199,6 +199,78 @@ void framebuffer_update_jpeg_buffer()
     }
 }
 
+void framebuffer_update_jpeg_buffer2(image_t main_fb_src)
+{
+    static int overflow_count = 0;
+
+    //image_t main_fb_src;
+    //framebuffer_initialize_image(&main_fb_src);
+    image_t *src = &main_fb_src;
+
+    if (framebuffer->streaming_enabled && jpeg_framebuffer->enabled) {
+        if (src->bpp > 4) {
+            bool does_not_fit = false;
+
+            if (mutex_try_lock(&jpeg_framebuffer->lock, MUTEX_TID_OMV)) {
+                if(CONSERVATIVE_JPEG_BUF_SIZE < src->bpp) {
+                    initialize_jpeg_buf_from_image(NULL);
+                    does_not_fit = true;
+                } else {
+                    initialize_jpeg_buf_from_image(src);
+                    memcpy(jpeg_framebuffer->pixels, src->pixels, src->bpp);
+                }
+
+                mutex_unlock(&jpeg_framebuffer->lock, MUTEX_TID_OMV);
+            }
+
+            if (does_not_fit) {
+                printf("Warning: JPEG too big! Trying framebuffer transfer using fallback method!\n");
+                int new_size = fb_encode_for_ide_new_size(src);
+                fb_alloc_mark();
+                uint8_t *temp = fb_alloc(new_size, FB_ALLOC_NO_HINT);
+                fb_encode_for_ide(temp, src);
+                (MP_PYTHON_PRINTER)->print_strn((MP_PYTHON_PRINTER)->data, (const char *) temp, new_size);
+                fb_alloc_free_till_mark();
+            }
+        } else if (src->bpp >= 0) {
+            if (mutex_try_lock(&jpeg_framebuffer->lock, MUTEX_TID_OMV)) {
+                image_t dst = {.w=src->w, .h=src->h, .bpp=CONSERVATIVE_JPEG_BUF_SIZE, .pixels=jpeg_framebuffer->pixels};
+                // Note: lower quality saves USB bandwidth and results in a faster IDE FPS.
+                bool overflow = jpeg_compress(src, &dst, jpeg_framebuffer->quality, false);
+
+                if (overflow) {
+                    // JPEG buffer overflowed, reduce JPEG quality for the next frame
+                    // and skip the current frame. The IDE doesn't receive this frame.
+                    if (jpeg_framebuffer->quality > 1) {
+                        // Keep this quality for the next n frames
+                        overflow_count = 60;
+                        jpeg_framebuffer->quality = IM_MAX(1, (jpeg_framebuffer->quality/2));
+                    }
+
+                    initialize_jpeg_buf_from_image(NULL);
+                } else {
+                    if (overflow_count) {
+                        overflow_count--;
+                    }
+
+                    // Dynamically adjust our quality if the image is huge.
+                    bool big_frame_buffer = image_size(src) > JPEG_QUALITY_THRESH;
+                    int jpeg_quality_max = big_frame_buffer ? JPEG_QUALITY_LOW : JPEG_QUALITY_HIGH;
+
+                    // No buffer overflow, increase quality up to max quality based on frame size...
+                    if ((!overflow_count) && (jpeg_framebuffer->quality < jpeg_quality_max)) {
+                        jpeg_framebuffer->quality++;
+                    }
+
+                    initialize_jpeg_buf_from_image(&dst);
+                }
+
+                mutex_unlock(&jpeg_framebuffer->lock, MUTEX_TID_OMV);
+            }
+        }
+    }
+}
+
 int32_t framebuffer_get_x()
 {
     return framebuffer->x;
